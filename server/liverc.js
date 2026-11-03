@@ -326,7 +326,7 @@ export async function fetchLiveScoring(liveUrl = LIVE_URL) {
   const packets =
     (await readLivePackets(liveUrl, "scoring", (list) => {
       const names = new Set(list.map((packet) => packet?.name));
-      return names.has("updateRaceData") && names.has("updateDriverData");
+      return names.has("updateRaceData") && names.has("updateDriverData") && names.has("updateClockData");
     })) || [];
 
   const state = { race: null, clock: null, drivers: null };

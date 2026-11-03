@@ -214,6 +214,11 @@ export default async function (saved) {
         className: currentRace ? currentRace.className : null,
         heat: currentRace ? currentRace.heat : "",
         lengthSeconds: currentRace ? currentRace.lengthSeconds : null,
+        // Only use the clock when the live feed identifies this exact heat.
+        remainingSeconds: feedHeat === currentRace && live?.status === "running" && live.raceLengthType !== "L"
+          && /^-?\d+:\d{2}$/.test(live.timeRemaining || "")
+          ? (live.timeRemaining.startsWith("-") ? 0 : parseClockSeconds(live.timeRemaining))
+          : null,
         onTrack: currentRace ? currentRace.drivers : [],
       },
       cadenceMinutes: medianCadenceMinutes(rounds),
