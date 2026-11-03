@@ -10,12 +10,8 @@ else
   "${docker_command[@]}" info >/dev/null
 fi
 if [[ ! -f .env ]]; then
-  read -r -p 'Admin email: ' admin_email
-  [[ "$admin_email" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]] || { echo 'Enter a valid email address.'; exit 1; }
-  password="$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"
   umask 077
-  printf 'ADMIN_EMAIL=%s\nADMIN_PASSWORD=%s\nHTTP_PORT=8080\nBIND_ADDRESS=0.0.0.0\nCOOKIE_SECURE=false\n' "$admin_email" "$password" > .env
-  printf '\nAdmin email: %s\nGenerated password: %s\nSave these credentials. They are also in .env.\n\n' "$admin_email" "$password"
+  printf 'HTTP_PORT=8080\nBIND_ADDRESS=0.0.0.0\n' > .env
 fi
 "${docker_command[@]}" compose up -d --build --wait --wait-timeout 120
 echo 'RCPitBoard is ready on http://SERVER-IP:8080 (unless changed in .env).'
