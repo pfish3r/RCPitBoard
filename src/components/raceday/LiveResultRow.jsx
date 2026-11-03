@@ -2,8 +2,8 @@ import React from "react";
 import { prettyName } from "@/lib/raceday";
 import DriverName from "@/components/raceday/DriverName";
 
-export const LIVE_RESULT_GRID = "grid-cols-[1.4rem_1.9rem_minmax(0,1fr)_1.4rem_2.8rem_2.6rem]";
-export const LIVE_RESULT_GRID_WIDE = "grid-cols-[2rem_2.6rem_minmax(0,1fr)_2rem_4rem_3.4rem]";
+export const LIVE_RESULT_GRID = "grid-cols-[1.4rem_1.9rem_minmax(0,1fr)_1.4rem_2.8rem_2.6rem_6.25rem]";
+export const LIVE_RESULT_GRID_WIDE = "grid-cols-[2rem_2.6rem_minmax(0,1fr)_2rem_4rem_3.4rem_7rem]";
 
 function gapLabel(value) {
   const gap = String(value || "");
@@ -61,6 +61,14 @@ export default function LiveResultRow({ row, mine, wide, clashes }) {
         }`}
       >
         {gapLabel(row.difference)}
+      </span>
+      <span
+        title="Predicted finish: laps / total race time"
+        className={`whitespace-nowrap text-right font-mono text-rd-bright ${
+          wide ? "text-xs" : "text-[10px]"
+        }`}
+      >
+        {row.pace || "-"}
       </span>
     </div>
   );

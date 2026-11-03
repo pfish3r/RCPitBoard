@@ -45,10 +45,10 @@ export default function LiveResults({ live, driverKey, wide, scrollSpeed }) {
       </div>
 
       {rows.length ? (
-        <div className="flex min-h-0 flex-col gap-1 lg:flex-1 lg:overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-col gap-1 overflow-x-auto lg:flex-1 lg:overflow-hidden">
           <div
-            className={`grid ${wide ? LIVE_RESULT_GRID_WIDE : LIVE_RESULT_GRID} px-1.5 pb-1 text-[9px] uppercase tracking-[0.1em] text-rd-faint ${
-              wide ? "gap-2.5" : "gap-1.5"
+            className={`grid min-w-[24rem] ${wide ? LIVE_RESULT_GRID_WIDE : LIVE_RESULT_GRID} pb-1 text-[9px] uppercase tracking-[0.1em] text-rd-faint ${
+              wide ? "gap-1.5 px-2.5" : "gap-1.5 px-1.5"
             }`}
           >
             <span>Pos</span>
@@ -57,11 +57,12 @@ export default function LiveResults({ live, driverKey, wide, scrollSpeed }) {
             <span className="text-right">Lap</span>
             <span className="text-right">Last</span>
             <span className="text-right">Gap</span>
+            <span className="text-right" title="Predicted laps / total race time">Pred. finish</span>
           </div>
           <AutoScrollColumn
             speed={scrollSpeed}
             bounce
-            className="min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-1"
+            className="min-h-0 min-w-[24rem] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-1"
           >
             <div className="flex flex-col gap-1">
               {rows.map((row) => (
@@ -83,7 +84,7 @@ export default function LiveResults({ live, driverKey, wide, scrollSpeed }) {
       )}
 
       <p className="mt-auto text-[9px] uppercase tracking-[0.16em] text-rd-faint">
-        From the track's live timing feed
+        Pred. finish = laps / total race time, from live timing
       </p>
     </section>
   );

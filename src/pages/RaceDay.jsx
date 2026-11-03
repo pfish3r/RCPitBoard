@@ -169,8 +169,8 @@ export default function RaceDay() {
 
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
             <main
-              className={`px-4 pb-4 pt-3 sm:px-6 lg:min-h-0 lg:overflow-hidden ${
-                showLive ? "lg:w-1/2 lg:shrink-0" : "lg:flex-1"
+              className={`px-4 pb-4 pt-3 sm:px-6 lg:min-h-0 lg:min-w-0 lg:overflow-hidden ${
+                showLive ? "lg:w-2/5 lg:shrink-0" : "lg:flex-1"
               }`}
             >
               <RaceOrder
@@ -185,8 +185,10 @@ export default function RaceDay() {
             {showLive && (
               <aside className="shrink-0 border-t border-rd-border px-4 pb-4 pt-4 sm:px-6 lg:min-h-0 lg:min-w-0 lg:flex-1 lg:overflow-hidden lg:border-l lg:border-t-0">
                 <div
-                  className={`grid gap-4 lg:h-full lg:min-h-0 lg:grid-rows-[minmax(0,1fr)] ${
-                    showEpd ? "sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]" : ""
+                  className={`grid gap-4 lg:h-full lg:min-h-0 ${
+                    showEpd
+                      ? "lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)]"
+                      : "lg:grid-rows-[minmax(0,1fr)]"
                   }`}
                 >
                   <LiveResults
