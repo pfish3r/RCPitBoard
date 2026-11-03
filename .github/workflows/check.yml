@@ -20,13 +20,17 @@ jobs:
       - run: cp .env.example .env && docker compose config --quiet
       - name: Build and start the Debian container
         run: |
-          printf '\nADMIN_PASSWORD=ci-only-password-for-container-test\nBIND_ADDRESS=127.0.0.1\n' >> .env
+          printf '\nBIND_ADDRESS=127.0.0.1\n' >> .env
           docker compose up -d --build --wait --wait-timeout 120
-      - name: Check board and administrator protection over HTTP
+      - name: Check board and settings without login over HTTP
         run: |
           curl --fail --silent http://127.0.0.1:8080/api/health
           curl --fail --silent http://127.0.0.1:8080/ | grep -q RCPitBoard
-          test "$(curl --silent -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/api/auth/me)" = 401
+          curl --fail --silent http://127.0.0.1:8080/admin | grep -q RCPitBoard
+          curl --fail --silent -X PUT http://127.0.0.1:8080/api/settings \
+            -H 'Content-Type: application/json' -H 'X-RCPitBoard: 1' \
+            --data '{"live_url":"https://lprcoffroad.liverc.com/live/","results_url":"https://lprcoffroad.liverc.com/results/","scroll_speed":30,"refresh_seconds":20}'
+          curl --fail --silent http://127.0.0.1:8080/api/settings | grep -q '"scroll_speed":30'
       - name: Container logs
         if: failure()
         run: docker compose logs --tail=100
