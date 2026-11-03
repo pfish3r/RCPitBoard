@@ -42,6 +42,7 @@ export default function EpdPanel({ epd, live, driverKey, scrollSpeed }) {
 
       <AutoScrollColumn
         speed={scrollSpeed}
+        pauseAtTop={10000}
         className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <div className="flex flex-col gap-0.5">

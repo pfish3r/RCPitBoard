@@ -12,7 +12,7 @@ const DEFAULT_CLASS =
  * visible area: the content is rendered enough times to fill the window and the
  * scroll position wraps at one copy, so the roll never stops.
  */
-export default function AutoScrollColumn({ children, className, speed = 16, repeat = false, bounce = false }) {
+export default function AutoScrollColumn({ children, className, speed = 16, repeat = false, bounce = false, pauseAtTop = 0 }) {
   const ref = useRef(null);
   const first = useRef(null);
   const second = useRef(null);
@@ -51,10 +51,12 @@ export default function AutoScrollColumn({ children, className, speed = 16, repe
 
     let frame = null;
     let last = performance.now();
-    let hold = 0;
+    let hold = pauseAtTop;
+    let holdingAtTop = pauseAtTop > 0;
     // Browsers round scrollTop to whole pixels, so sub-pixel steps would be
     // lost every frame. Track the exact position here and only write it out.
-    let pos = node.scrollTop;
+    let pos = pauseAtTop > 0 ? 0 : node.scrollTop;
+    if (pauseAtTop > 0) node.scrollTop = 0;
     let dir = 1;
 
     const step = (time) => {
@@ -76,8 +78,15 @@ export default function AutoScrollColumn({ children, className, speed = 16, repe
         } else if (hold > 0) {
           hold -= delta * 1000;
           if (hold <= 0) {
-            if (bounce) dir = -dir;
-            else pos = 0;
+            if (holdingAtTop) {
+              holdingAtTop = false;
+            } else if (bounce) {
+              dir = -dir;
+            } else {
+              pos = 0;
+              hold = pauseAtTop;
+              holdingAtTop = true;
+            }
           }
         } else if (dir > 0 && pos >= max - 0.5) {
           hold = PAUSE_AT_END;
@@ -96,10 +105,10 @@ export default function AutoScrollColumn({ children, className, speed = 16, repe
 
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [speed, rendered, bounce]);
+  }, [speed, rendered, bounce, pauseAtTop]);
 
   return (
-    <div ref={ref} className={className || DEFAULT_CLASS}>
+    <div ref={ref} className={className || DEFAULT_CLASS} style={pauseAtTop > 0 ? { scrollBehavior: "auto" } : undefined}>
       <div className="flex flex-col gap-1">
         {Array.from({ length: rendered }).map((_, index) => (
           <div
