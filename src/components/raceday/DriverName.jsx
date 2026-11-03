@@ -24,10 +24,19 @@ export function clashingShortNames(names) {
   return new Set([...seen].filter(([, fulls]) => fulls.size > 1).map(([short]) => short));
 }
 
-export default function DriverName({ name, className = "", clashes }) {
+export default function DriverName({ name, className = "", clashes, fullName = false }) {
   const short = shortenName(name);
-  const label = clashes?.has(short)
-    ? String(name || "").trim().split(/\s+/).slice(0, 2).join(" ")
-    : short;
-  return <span className={`block min-w-0 truncate ${className}`}>{label}</span>;
+  const label = fullName
+    ? String(name || "").trim()
+    : clashes?.has(short)
+      ? String(name || "").trim().split(/\s+/).slice(0, 2).join(" ")
+      : short;
+  return (
+    <span
+      title={fullName ? label : undefined}
+      className={`block min-w-0 ${fullName ? "break-words" : "truncate"} ${className}`}
+    >
+      {label}
+    </span>
+  );
 }

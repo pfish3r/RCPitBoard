@@ -43,6 +43,7 @@ export default function LiveResultRow({ row, mine, wide, clashes }) {
       <DriverName
         name={prettyName(row.name)}
         clashes={clashes}
+        fullName={wide}
         className={`text-rd-bright ${wide ? "text-[15px]" : "text-[13px]"}`}
       />
       <span className={`text-right font-mono text-rd-bright ${wide ? "text-sm" : "text-xs"}`}>
