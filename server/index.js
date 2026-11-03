@@ -2,11 +2,9 @@ import { createServer } from 'node:http';
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { resolve, extname, dirname, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { randomBytes, scrypt, timingSafeEqual, createHash } from 'node:crypto';
-import { promisify } from 'node:util';
+import { randomBytes } from 'node:crypto';
 import snapshot from './snapshot.js';
 
-const deriveKey = promisify(scrypt);
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const defaults = { id: 'track', live_url: 'https://lprcoffroad.liverc.com/live/',
   results_url: 'https://lprcoffroad.liverc.com/results/', scroll_speed: 16, refresh_seconds: 20 };
@@ -32,12 +30,6 @@ export function validateSettings(data) {
 
 export async function createApp(options = {}) {
   const env = options.env || process.env;
-  const email = (env.ADMIN_EMAIL || '').trim().toLowerCase();
-  const password = env.ADMIN_PASSWORD || '';
-  if (!email.includes('@') || password.length < 16) throw new Error('Set ADMIN_EMAIL and an ADMIN_PASSWORD of at least 16 characters in .env');
-  const secure = env.COOKIE_SECURE === 'true';
-  const salt = randomBytes(32);
-  const passwordHash = await deriveKey(password, salt, 64);
   const dataDir = resolve(options.dataDir || env.DATA_DIR || resolve(project, 'data'));
   const distDir = resolve(options.distDir || resolve(project, 'dist'));
   const file = resolve(dataDir, 'settings.json');
@@ -48,8 +40,6 @@ export async function createApp(options = {}) {
     if (err.code !== 'ENOENT') throw new Error(`Cannot read saved settings: ${err.message}`);
     settings = { ...defaults };
   }
-  const sessions = new Map();
-  const attempts = new Map();
   let cached, pending;
   const getSnapshot = options.getSnapshot || (async (saved) => {
     const response = await snapshot(saved);
@@ -60,13 +50,6 @@ export async function createApp(options = {}) {
   function json(res, status, data, headers = {}) {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers });
     res.end(JSON.stringify(data));
-  }
-  const cookie = token => `rcpitboard_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${token ? 43200 : 0}${secure ? '; Secure' : ''}`;
-  const digest = token => createHash('sha256').update(token).digest('hex');
-  function auth(req) {
-    const token = (req.headers.cookie || '').match(/(?:^|;\s*)rcpitboard_session=([a-f0-9]{64})(?:;|$)/)?.[1];
-    const expires = token && sessions.get(digest(token));
-    if (!expires || expires < Date.now()) throw fail(401, 'Sign in to change settings');
   }
   async function body(req) {
     let raw = '';
@@ -86,30 +69,8 @@ export async function createApp(options = {}) {
         if (!['GET', 'HEAD'].includes(req.method) && req.headers['x-rcpitboard'] !== '1') throw fail(403, 'Missing request header');
         // No CORS headers are emitted; cross-origin custom-header requests cannot pass preflight.
         if (req.method === 'GET' && path === '/api/health') return json(res, 200, { ok: true, version: '1.0.0' });
-        if (req.method === 'POST' && path === '/api/auth/login') {
-          const key = req.socket.remoteAddress;
-          const now = Date.now();
-          const attempt = attempts.get(key) || { count: 0, until: now + 15 * 60_000 };
-          if (attempt.until < now) { attempt.count = 0; attempt.until = now + 15 * 60_000; }
-          if (++attempt.count > 10) { attempts.set(key, attempt); throw fail(429, 'Too many attempts. Try again in 15 minutes.'); }
-          attempts.set(key, attempt);
-          const input = await body(req);
-          const candidate = await deriveKey(String(input.password || ''), salt, 64);
-          if (!timingSafeEqual(candidate, passwordHash) || String(input.email || '').trim().toLowerCase() !== email) throw fail(401, 'Invalid email or password');
-          attempts.delete(key);
-          const token = randomBytes(32).toString('hex');
-          sessions.set(digest(token), now + 12 * 60 * 60_000);
-          return json(res, 200, { email, role: 'admin' }, { 'Set-Cookie': cookie(token) });
-        }
-        if (req.method === 'POST' && path === '/api/auth/logout') {
-          const token = (req.headers.cookie || '').match(/rcpitboard_session=([a-f0-9]{64})/)?.[1];
-          if (token) sessions.delete(digest(token));
-          return json(res, 200, { ok: true }, { 'Set-Cookie': cookie('') });
-        }
-        if (req.method === 'GET' && path === '/api/auth/me') { auth(req); return json(res, 200, { email, role: 'admin' }); }
         if (req.method === 'GET' && path === '/api/settings') return json(res, 200, settings);
         if (req.method === 'PUT' && path === '/api/settings') {
-          auth(req);
           const next = validateSettings(await body(req));
           const tmp = `${file}.${randomBytes(8).toString('hex')}.tmp`;
           await writeFile(tmp, JSON.stringify(next, null, 2), { mode: 0o600 });
@@ -149,11 +110,6 @@ export async function createApp(options = {}) {
   });
   server.requestTimeout = 30_000;
   server.headersTimeout = 10_000;
-  const cleanup = setInterval(() => {
-    for (const [key, expires] of sessions) if (expires < Date.now()) sessions.delete(key);
-    for (const [key, value] of attempts) if (value.until < Date.now()) attempts.delete(key);
-  }, 60_000).unref();
-  server.on('close', () => clearInterval(cleanup));
   return server;
 }
 
