@@ -1,11 +1,11 @@
 import React from "react";
 import { Check } from "lucide-react";
-import { formatClock, formatLead, shortTime } from "@/lib/raceday";
+import { formatClock, formatCountdown, shortTime } from "@/lib/raceday";
 
 export default function RaceRow({ race, isActiveRound }) {
   const done = race.status === "complete";
-  const onNow = isActiveRound && race.racesAway === 0;
-  const isNext = isActiveRound && race.racesAway === 1;
+  const onNow = isActiveRound && race.racesAway === 0 && race.status === "running";
+  const isNext = isActiveRound && race.isNext;
   const hasEta = race.minutesAhead !== null && race.minutesAhead !== undefined;
 
   return (
@@ -53,22 +53,22 @@ export default function RaceRow({ race, isActiveRound }) {
           <span className="font-display text-2xl font-semibold uppercase leading-none tracking-wide text-rd-acctext lg:text-3xl">
             On now
           </span>
-        ) : isNext ? (
+        ) : isNext && hasEta ? (
           <>
             <span className="block text-sm font-semibold uppercase tracking-[0.16em] text-rd-bright lg:text-base">
               Next up
             </span>
             <span className="block text-sm text-rd-muted lg:text-base">
-              ~{formatLead(race.minutesAhead)} · {formatClock(Date.now() + race.minutesAhead * 60000)}
+              ~{formatCountdown(race.secondsAhead)} · {formatClock(race.estimatedStartAt)}
             </span>
           </>
         ) : hasEta ? (
           <>
             <span className="block font-display text-2xl font-semibold leading-none text-rd-bright lg:text-3xl">
-              ~{formatLead(race.minutesAhead)}
+              ~{formatCountdown(race.secondsAhead)}
             </span>
             <span className="block text-sm text-rd-faint lg:text-base">
-              {formatClock(Date.now() + race.minutesAhead * 60000)}
+              {formatClock(race.estimatedStartAt)}
             </span>
           </>
         ) : (

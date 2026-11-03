@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { formatClock, formatLead, normalizeName, prettyName } from "@/lib/raceday";
+import { formatClock, formatCountdown, normalizeName, prettyName } from "@/lib/raceday";
 
 export default function DriverBar({ drivers, driverKey, myRace, emptyMessage, onSelect, onClear }) {
   const [query, setQuery] = useState("");
@@ -100,10 +100,10 @@ export default function DriverBar({ drivers, driverKey, myRace, emptyMessage, on
                         : "Pit time left"}
                     </p>
                     <p className="font-display text-3xl font-semibold leading-none text-rd-acctext lg:text-4xl">
-                      ~{formatLead(eta)}
+                      ~{formatCountdown(myRace.secondsAhead)}
                     </p>
                     <p className="text-[10px] uppercase tracking-[0.16em] text-rd-faint">
-                      est. {formatClock(Date.now() + eta * 60000)}
+                      est. {formatClock(myRace.estimatedStartAt)}
                     </p>
                   </>
                 ) : (
