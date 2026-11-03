@@ -13,12 +13,12 @@ test('reject internal, alternate-port and mismatched timing URLs', () => {
   }
   assert.throws(() => validateSettings({ ...settings, refresh_seconds: 1 }));
 });
-test('auth, persistence, cache sharing, logout and static isolation', async () => {
+test('settings work without credentials and preserve validation, persistence and cache sharing', async () => {
   const directory = await mkdtemp(join(process.cwd(), 'rcpitboard-test-'));
   const distDir = join(directory, 'dist');
   await mkdir(distDir); await writeFile(join(distDir, 'index.html'), '<title>RCPitBoard</title>');
   let calls = 0;
-  const options = { dataDir: join(directory, 'data'), distDir, env: { ADMIN_EMAIL: 'admin@example.com', ADMIN_PASSWORD: 'test-password-long-enough' },
+  const options = { dataDir: join(directory, 'data'), distDir, env: {},
     getSnapshot: async () => { calls++; await new Promise(r => setTimeout(r, 20)); return { track: { name: 'Test Track' } }; } };
   let server = await createApp(options);
   const base = 'http://test';
@@ -46,22 +46,22 @@ test('auth, persistence, cache sharing, logout and static isolation', async () =
     assert.equal((await fetch(base + '/admin')).status, 200);
     assert.equal((await fetch(base + '/.env')).status, 404);
     assert.equal((await fetch(base + '/server/index.js')).status, 404);
-    assert.equal((await fetch(base + '/api/auth/me')).status, 401);
-    assert.equal((await fetch(base + '/api/settings', { method: 'PUT', headers, body: JSON.stringify(settings) })).status, 401);
-    assert.equal((await fetch(base + '/api/auth/login', { method: 'POST', body: '{}' })).status, 403);
-    const login = await fetch(base + '/api/auth/login', { method: 'POST', headers, body: JSON.stringify({ email: 'admin@example.com', password: 'test-password-long-enough' }) });
-    assert.equal(login.status, 200);
-    headers.Cookie = login.headers.get('set-cookie').split(';')[0];
+    assert.equal((await fetch(base + '/api/auth/me')).status, 404);
+    assert.equal((await fetch(base + '/api/auth/login', { method: 'POST', headers, body: '{}' })).status, 404);
+    assert.equal((await fetch(base + '/api/settings', { method: 'PUT', body: JSON.stringify(settings) })).status, 403);
+    assert.equal((await fetch(base + '/api/settings', { method: 'PUT', headers, body: JSON.stringify({ ...settings, live_url: 'http://127.0.0.1/' }) })).status, 400);
     const changed = { ...settings, scroll_speed: 30 };
-    assert.equal((await fetch(base + '/api/settings', { method: 'PUT', headers, body: JSON.stringify(changed) })).status, 200);
+    const saved = await fetch(base + '/api/settings', { method: 'PUT', headers, body: JSON.stringify(changed) });
+    assert.equal(saved.status, 200);
+    assert.equal(saved.headers.get('set-cookie'), null);
+    assert.equal((await saved.json()).scroll_speed, 30);
     const responses = await Promise.all(Array.from({ length: 5 }, () => fetch(base + '/api/snapshot')));
     assert.ok(responses.every(r => r.status === 200)); assert.equal(calls, 1);
-    await fetch(base + '/api/auth/logout', { method: 'POST', headers });
-    assert.equal((await fetch(base + '/api/auth/me', { headers })).status, 401);
     await close();
-    server = await createApp(options); await listen();
+    // Old installations can keep obsolete or blank credentials in their .env.
+    server = await createApp({ ...options, env: { ADMIN_EMAIL: '', ADMIN_PASSWORD: '' } }); await listen();
     assert.equal((await (await fetch(base + '/api/settings')).json()).scroll_speed, 30);
-    assert.equal((await fetch(base + '/api/auth/me', { headers })).status, 401);
+    assert.equal((await fetch(base + '/api/settings', { method: 'PUT', headers, body: JSON.stringify(changed) })).status, 200);
   } finally { await close(); await rm(directory, { recursive: true, force: true }); }
 });
 test('preserved LiveRC parsers read rounds and heat entries', () => {
