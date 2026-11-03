@@ -10,11 +10,6 @@ async function request(path, method = 'GET', body) {
   return data;
 }
 export const api = {
-  auth: {
-    me: () => request('/auth/me'),
-    loginViaEmailPassword: (email, password) => request('/auth/login', 'POST', { email, password }),
-    logout: () => request('/auth/logout', 'POST'),
-  },
   entities: { TrackSettings: {
     filter: () => request('/settings').then(settings => ({ items: [settings] })),
     create: data => request('/settings', 'PUT', data),
