@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/api/client";
 import { DEFAULT_REFRESH_SECONDS } from "@/lib/trackDefaults";
+import { anchorRaceTiming } from "@/lib/raceday";
 
 export default function useRaceDaySnapshot() {
   const [snapshot, setSnapshot] = useState(null);
@@ -14,7 +15,10 @@ export default function useRaceDaySnapshot() {
     try {
       const response = await api.functions.invoke("raceDaySnapshot", {});
       if (response.data?.error) throw new Error(response.data.error);
-      setSnapshot(response.data);
+      setSnapshot(previous => ({
+        ...response.data,
+        timing: anchorRaceTiming(response.data, previous?.timing),
+      }));
       setError(null);
     } catch (err) {
       setError(err?.response?.data?.error || err.message || "Could not reach the timing feed");
