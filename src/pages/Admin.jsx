@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2, ShieldAlert, Check } from "lucide-react";
+import { ArrowLeft, Loader2, Check } from "lucide-react";
 import { api } from "@/api/client";
-import { useAuth } from "@/lib/AuthContext";
 import RefreshRateField from "@/components/admin/RefreshRateField";
 import {
   DEFAULT_LIVE_URL,
@@ -14,9 +13,7 @@ import {
 } from "@/lib/trackDefaults";
 
 export default function Admin() {
-  const { logout } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [recordId, setRecordId] = useState(null);
   const [liveUrl, setLiveUrl] = useState("");
   const [resultsUrl, setResultsUrl] = useState("");
@@ -30,12 +27,8 @@ export default function Admin() {
     let active = true;
     (async () => {
       try {
-        const [user, page] = await Promise.all([
-          api.auth.me(),
-          api.entities.TrackSettings.filter({}, { sort: "-created_date", limit: 1 }),
-        ]);
+        const page = await api.entities.TrackSettings.filter();
         if (!active) return;
-        setIsAdmin(user?.role === "admin");
         const settings = page?.items?.[0] || null;
         setRecordId(settings?.id || null);
         setLiveUrl(settings?.live_url || DEFAULT_LIVE_URL);
@@ -73,7 +66,7 @@ export default function Admin() {
       }
       setSaved(true);
     } catch (err) {
-      setError(err?.message || "Could not save these settings. Check you're signed in as an admin.");
+      setError(err?.message || "Could not save these settings.");
     } finally {
       setSaving(false);
     }
@@ -89,7 +82,6 @@ export default function Admin() {
           <ArrowLeft className="h-3.5 w-3.5" /> Back to pit board
         </Link>
 
-        <button type="button" onClick={() => logout()} className="float-right text-sm text-rd-muted">Sign out</button>
         <h1 className="mt-5 font-display text-3xl font-semibold uppercase leading-none text-rd-bright lg:text-4xl">
           Track settings
         </h1>
@@ -104,14 +96,6 @@ export default function Admin() {
           </div>
         ) : (
           <form onSubmit={save} className="mt-8 space-y-6">
-            {!isAdmin && (
-              <div className="flex items-start gap-3 rounded-2xl border border-[#ff4d3d]/30 bg-[#ff4d3d]/[0.06] p-4">
-                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-rd-live" />
-                <p className="text-sm text-rd-dim">
-                  Only an admin can change these settings. Sign in with the administrator credentials created during setup.
-                </p>
-              </div>
-            )}
 
             <label className="block">
               <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rd-muted">
@@ -121,7 +105,6 @@ export default function Admin() {
                 type="url"
                 value={liveUrl}
                 onChange={(event) => setLiveUrl(event.target.value)}
-                disabled={!isAdmin}
                 placeholder={DEFAULT_LIVE_URL}
                 className="mt-2 h-12 w-full rounded-xl border border-rd-border bg-rd-surface px-4 text-base text-rd-bright placeholder:text-rd-faint focus:border-[#c6f24e]/70 focus:outline-none disabled:opacity-60"
               />
@@ -138,7 +121,6 @@ export default function Admin() {
                 type="url"
                 value={resultsUrl}
                 onChange={(event) => setResultsUrl(event.target.value)}
-                disabled={!isAdmin}
                 placeholder={DEFAULT_RESULTS_URL}
                 className="mt-2 h-12 w-full rounded-xl border border-rd-border bg-rd-surface px-4 text-base text-rd-bright placeholder:text-rd-faint focus:border-[#c6f24e]/70 focus:outline-none disabled:opacity-60"
               />
@@ -161,7 +143,6 @@ export default function Admin() {
                 step={1}
                 value={scrollSpeed}
                 onChange={(event) => setScrollSpeed(Number(event.target.value))}
-                disabled={!isAdmin}
                 className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-rd-border accent-[#c6f24e] disabled:opacity-60"
               />
               <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.16em] text-rd-faint">
@@ -173,7 +154,7 @@ export default function Admin() {
               </span>
             </div>
 
-            <RefreshRateField value={refreshSeconds} onChange={setRefreshSeconds} disabled={!isAdmin} />
+            <RefreshRateField value={refreshSeconds} onChange={setRefreshSeconds} />
 
             {error && (
               <p className="rounded-xl border border-[#ff4d3d]/30 bg-[#ff4d3d]/[0.06] px-4 py-3 text-sm text-[#ff9a90]">
@@ -184,7 +165,7 @@ export default function Admin() {
             <div className="flex items-center gap-3">
               <button
                 type="submit"
-                disabled={!isAdmin || saving}
+                disabled={saving}
                 className="inline-flex items-center gap-2 rounded-full bg-rd-accent px-5 py-2.5 text-sm font-semibold text-rd-ink transition hover:bg-[#d4ff62] disabled:opacity-50"
               >
                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
