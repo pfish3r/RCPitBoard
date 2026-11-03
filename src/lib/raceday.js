@@ -29,22 +29,33 @@ export function collectDrivers(rounds) {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function buildTimeline({ round, current, cadenceMinutes, fetchedAt, now, driverKey, viewerRoundIsActive }) {
+// Keep fallback estimates anchored to a race/status change, rather than
+// starting the same wait again every time a new snapshot arrives.
+export function anchorRaceTiming(snapshot, previous) {
+  const current = snapshot?.current;
+  if (!current?.seq) return null;
+  const observedAt = Date.parse(snapshot.fetchedAt);
+  if (!Number.isFinite(observedAt)) return null;
+  const key = JSON.stringify([snapshot.track?.liveUrl, snapshot.event?.name,
+    snapshot.event?.date, current.roundId, current.seq, current.status]);
+  const remaining = current.remainingSeconds;
+  if (current.status === "running" && typeof remaining === "number" && Number.isFinite(remaining)) {
+    if (previous?.key === key && previous.remainingSeconds === remaining) return previous;
+    return { key, at: observedAt + Math.max(0, remaining) * 1000, remainingSeconds: remaining };
+  }
+  if (previous?.key === key) return previous;
+  const seconds = current.status === "running" ? (current.lengthSeconds || 300) :
+    current.status === "pending" ? 120 : 0;
+  return { key, at: observedAt + seconds * 1000 };
+}
+
+export function buildTimeline({ round, current, cadenceMinutes, fetchedAt, timing, now, driverKey, viewerRoundIsActive }) {
   if (!round) return [];
   const races = round.races || [];
   const cadence = cadenceMinutes || 9;
   const seqNow = viewerRoundIsActive && current ? current.seq : null;
-  const onTrack = viewerRoundIsActive && seqNow > 0 ? races[seqNow - 1] : null;
-  const driftMinutes = fetchedAt ? Math.max(0, (now - new Date(fetchedAt).getTime()) / 60000) : 0;
-
-  let remainingMinutes = 0;
-  if (onTrack) {
-    const lengthMinutes = (onTrack.lengthSeconds || 300) / 60;
-    remainingMinutes =
-      onTrack.status === "running" ? Math.max(1, lengthMinutes * 0.45 - driftMinutes) : lengthMinutes;
-  }
-
-  const turnaround = 2;
+  const reference = timing?.at ?? anchorRaceTiming({ current, fetchedAt })?.at;
+  const running = current?.status === "running";
 
   return races.map((race, index) => {
     const seq = index + 1;
@@ -52,12 +63,22 @@ export function buildTimeline({ round, current, cadenceMinutes, fetchedAt, now, 
     const myEntry = mine ? race.drivers.find((driver) => normalizeName(driver.name) === driverKey) : null;
     let racesAway = null;
     let minutesAhead = null;
+    let secondsAhead = null;
+    let estimatedStartAt = null;
     if (seqNow !== null && seqNow > 0) {
       racesAway = seq - seqNow;
-      minutesAhead =
-        racesAway <= 0 ? 0 : Math.round(remainingMinutes + turnaround + (racesAway - 1) * cadence);
+      if (Number.isFinite(reference)) {
+        // A pending current race is the next race to start, not a full race
+        // still to run. A running race needs only its remaining time plus the gap.
+        estimatedStartAt = running
+          ? racesAway <= 0 ? null : reference + 120000 + (racesAway - 1) * cadence * 60000
+          : reference + Math.max(0, racesAway) * cadence * 60000;
+        secondsAhead = estimatedStartAt === null ? 0 : Math.max(0, Math.ceil((estimatedStartAt - now) / 1000));
+        minutesAhead = Math.ceil(secondsAhead / 60);
+      }
     }
-    return { ...race, seq, mine, myEntry, racesAway, minutesAhead };
+    const isNext = viewerRoundIsActive && race.status !== "complete" && racesAway === (running ? 1 : 0);
+    return { ...race, seq, mine, myEntry, racesAway, minutesAhead, secondsAhead, estimatedStartAt, isNext };
   });
 }
 
@@ -90,4 +111,12 @@ export function formatLead(minutes) {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
   return rest ? `${hours}h ${rest}m` : `${hours}h`;
+}
+
+export function formatCountdown(seconds) {
+  if (seconds === null || seconds === undefined) return "";
+  const total = Math.max(0, Math.ceil(seconds));
+  if (!total) return "now";
+  const minutes = Math.floor(total / 60);
+  return `${minutes}:${String(total % 60).padStart(2, "0")}`;
 }
