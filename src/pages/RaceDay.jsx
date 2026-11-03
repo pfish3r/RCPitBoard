@@ -39,11 +39,12 @@ export default function RaceDay() {
         current: snapshot?.current,
         cadenceMinutes: snapshot?.cadenceMinutes,
         fetchedAt: snapshot?.fetchedAt,
+        timing: snapshot?.timing,
         now,
         driverKey,
         viewerRoundIsActive: isActiveRound,
       }),
-    [viewRound, snapshot?.current, snapshot?.cadenceMinutes, snapshot?.fetchedAt, now, driverKey, isActiveRound]
+    [viewRound, snapshot?.current, snapshot?.cadenceMinutes, snapshot?.fetchedAt, snapshot?.timing, now, driverKey, isActiveRound]
   );
 
   const visibleTimeline = useMemo(
@@ -60,11 +61,12 @@ export default function RaceDay() {
             current: snapshot?.current,
             cadenceMinutes: snapshot?.cadenceMinutes,
             fetchedAt: snapshot?.fetchedAt,
+            timing: snapshot?.timing,
             now,
             driverKey,
             viewerRoundIsActive: true,
           }),
-    [isActiveRound, timeline, activeRound, snapshot?.current, snapshot?.cadenceMinutes, snapshot?.fetchedAt, now, driverKey]
+    [isActiveRound, timeline, activeRound, snapshot?.current, snapshot?.cadenceMinutes, snapshot?.fetchedAt, snapshot?.timing, now, driverKey]
   );
 
   const myRace = useMemo(
