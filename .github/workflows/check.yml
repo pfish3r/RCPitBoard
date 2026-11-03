@@ -1,0 +1,35 @@
+name: Check RCPitBoard
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - run: npm run build
+      - run: bash -n scripts/setup.sh scripts/update.sh
+      - run: cp .env.example .env && docker compose config --quiet
+      - name: Build and start the Debian container
+        run: |
+          printf '\nADMIN_PASSWORD=ci-only-password-for-container-test\nBIND_ADDRESS=127.0.0.1\n' >> .env
+          docker compose up -d --build --wait --wait-timeout 120
+      - name: Check board and administrator protection over HTTP
+        run: |
+          curl --fail --silent http://127.0.0.1:8080/api/health
+          curl --fail --silent http://127.0.0.1:8080/ | grep -q RCPitBoard
+          test "$(curl --silent -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/api/auth/me)" = 401
+      - name: Container logs
+        if: failure()
+        run: docker compose logs --tail=100
+      - name: Stop test container
+        if: always()
+        run: docker compose down -v
