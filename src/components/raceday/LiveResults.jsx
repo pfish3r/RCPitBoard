@@ -61,7 +61,7 @@ export default function LiveResults({ live, driverKey, wide, scrollSpeed, tvMode
           </div>
           <AutoScrollColumn
             speed={scrollSpeed}
-            bounce
+            pauseAtTop={10000}
             className="min-h-0 min-w-[24rem] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-1"
           >
             <div className="flex flex-col gap-1">
