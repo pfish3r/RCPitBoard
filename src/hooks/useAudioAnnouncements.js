@@ -27,7 +27,7 @@ function spokenLead(minutes) {
   return rest ? `, about ${hourText} ${rest} minutes` : `, about ${hourText}`;
 }
 
-export default function useAudioAnnouncements({ current, timeline }) {
+export default function useAudioAnnouncements({ current, timeline, paused = false }) {
   const { settings, updateSetting } = useAnnouncementSettings();
   const [enabled, setEnabled] = useState(() => localStorage.getItem(AUDIO_KEY) !== "off");
   const enabledRef = useRef(enabled);
@@ -39,15 +39,19 @@ export default function useAudioAnnouncements({ current, timeline }) {
       const next = !value;
       localStorage.setItem(AUDIO_KEY, next ? "on" : "off");
       synth()?.cancel();
-      if (next) announce("Announcements on");
+      if (next && !paused) announce("Announcements on");
       return next;
     });
-  }, []);
+  }, [paused]);
 
   const changeSetting = useCallback((key, value) => {
     updateSetting(key, value);
     if (!value && key !== "heatStartChime") synth()?.cancel();
   }, [updateSetting]);
+
+  useEffect(() => {
+    if (paused) synth()?.cancel();
+  }, [paused]);
 
   // Browsers only allow speech once the visitor has touched the page.
   useEffect(() => {
@@ -67,7 +71,7 @@ export default function useAudioAnnouncements({ current, timeline }) {
     const now = { seq: current.seq, status: current.status };
     const before = previous.current;
     previous.current = now;
-    if (!before || !enabledRef.current) return;
+    if (paused || !before || !enabledRef.current) return;
     if (before.seq === now.seq && before.status === now.status) return;
 
     const races = timeline || [];
@@ -98,7 +102,7 @@ export default function useAudioAnnouncements({ current, timeline }) {
     }
 
     if (spoken.length) announce(spoken.join(" "));
-  }, [current, timeline, settings]);
+  }, [current, timeline, settings, paused]);
 
   return { enabled, toggle, settings, changeSetting };
 }

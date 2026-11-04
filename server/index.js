@@ -40,7 +40,36 @@ export async function createApp(options = {}) {
     if (err.code !== 'ENOENT') throw new Error(`Cannot read saved settings: ${err.message}`);
     settings = { ...defaults };
   }
-  let cached, pending;
+  const boardFile = resolve(dataDir, 'board.json');
+  let board = { paused: false, pausedAt: null, totalPausedMs: 0, revision: 'initial', snapshot: null };
+  try { board = { ...board, ...JSON.parse(await readFile(boardFile, 'utf8')) }; }
+  catch (err) { if (err.code !== 'ENOENT') throw new Error(`Cannot read board state: ${err.message}`); }
+  let lastSnapshot = board.snapshot;
+  let cached, pending, controlQueue = Promise.resolve();
+  const boardStatus = () => {
+    const { snapshot: _snapshot, ...status } = board;
+    return status;
+  };
+  const boardSnapshot = data => ({ ...(data || {}), board: boardStatus() });
+  function setPaused(paused) {
+    const task = controlQueue.then(async () => {
+      if (board.paused === paused) return;
+      const now = Date.now();
+      const next = {
+        paused, pausedAt: paused ? now : null,
+        totalPausedMs: board.totalPausedMs + (board.paused ? Math.max(0, now - board.pausedAt) : 0),
+        revision: randomBytes(8).toString('hex'),
+        snapshot: paused ? cached?.data || lastSnapshot || null : null,
+      };
+      const tmp = `${boardFile}.${randomBytes(8).toString('hex')}.tmp`;
+      await writeFile(tmp, JSON.stringify(next), { mode: 0o600 });
+      await rename(tmp, boardFile);
+      board = next;
+      if (!paused) { cached = null; pending = null; }
+    });
+    controlQueue = task.catch(() => {});
+    return task;
+  }
   const getSnapshot = options.getSnapshot || (async (saved) => {
     const response = await snapshot(saved);
     const data = await response.json();
@@ -69,6 +98,13 @@ export async function createApp(options = {}) {
         if (!['GET', 'HEAD'].includes(req.method) && req.headers['x-rcpitboard'] !== '1') throw fail(403, 'Missing request header');
         // No CORS headers are emitted; cross-origin custom-header requests cannot pass preflight.
         if (req.method === 'GET' && path === '/api/health') return json(res, 200, { ok: true, version: '1.0.0' });
+        if (req.method === 'GET' && path === '/api/board') return json(res, 200, boardStatus());
+        if (req.method === 'PUT' && path === '/api/board') {
+          const data = await body(req);
+          if (typeof data.paused !== 'boolean') throw fail(400, 'paused must be true or false');
+          await setPaused(data.paused);
+          return json(res, 200, boardStatus());
+        }
         if (req.method === 'GET' && path === '/api/settings') return json(res, 200, settings);
         if (req.method === 'PUT' && path === '/api/settings') {
           const next = validateSettings(await body(req));
@@ -79,17 +115,24 @@ export async function createApp(options = {}) {
           return json(res, 200, settings);
         }
         if (req.method === 'GET' && path === '/api/snapshot') {
+          if (board.paused) return json(res, 200, boardSnapshot(board.snapshot));
+          const revision = board.revision;
           const cacheKey = JSON.stringify(settings);
-          if (cached?.key === cacheKey && Date.now() - cached.at < settings.refresh_seconds * 1000) return json(res, 200, cached.data);
+          if (cached?.key === cacheKey && Date.now() - cached.at < settings.refresh_seconds * 1000) return json(res, 200, boardSnapshot(cached.data));
           if (!pending || pending.key !== cacheKey) {
             const task = { key: cacheKey };
             task.promise = getSnapshot({ ...settings }).then(data => {
-              if (JSON.stringify(settings) === cacheKey) cached = { key: cacheKey, at: Date.now(), data };
+              if (!board.paused && board.revision === revision && JSON.stringify(settings) === cacheKey) {
+                cached = { key: cacheKey, at: Date.now(), data };
+                lastSnapshot = data;
+              }
               return data;
             }).finally(() => { if (pending === task) pending = null; });
             pending = task;
           }
-          return json(res, 200, await pending.promise);
+          const data = await pending.promise;
+          if (!board.paused && board.revision !== revision) throw fail(409, 'Board status changed; refresh to get current race data');
+          return json(res, 200, boardSnapshot(board.paused ? board.snapshot : data));
         }
         throw fail(404, 'API route not found');
       }

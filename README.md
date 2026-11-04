@@ -34,6 +34,8 @@ Run Git operations as the checkout owner. If sudo reports a Git ownership warnin
 
 ## Administration
 
+Use **Pause board** in `/admin` during a break. This freezes the shared race data and countdowns on every screen and mutes announcements. Screens pick up the change within a few seconds. **Resume board** fetches fresh timing data and continues the countdowns. Pause status and the frozen display survive a container restart. This controls the pit board only; LiveRC continues recording races.
+
 ```bash
 sudo docker compose ps
 sudo docker compose logs --tail=100 app

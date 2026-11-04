@@ -38,15 +38,19 @@ export function anchorRaceTiming(snapshot, previous) {
   if (!Number.isFinite(observedAt)) return null;
   const key = JSON.stringify([snapshot.track?.liveUrl, snapshot.event?.name,
     snapshot.event?.date, current.roundId, current.seq, current.status]);
+  const pauseOffset = snapshot.board?.totalPausedMs || 0;
+  if (previous?.key === key) previous = {
+    ...previous, at: previous.at + pauseOffset - (previous.pauseOffset || 0), pauseOffset,
+  };
   const remaining = current.remainingSeconds;
   if (current.status === "running" && typeof remaining === "number" && Number.isFinite(remaining)) {
     if (previous?.key === key && previous.remainingSeconds === remaining) return previous;
-    return { key, at: observedAt + Math.max(0, remaining) * 1000, remainingSeconds: remaining };
+    return { key, at: observedAt + Math.max(0, remaining) * 1000, remainingSeconds: remaining, pauseOffset };
   }
   if (previous?.key === key) return previous;
   const seconds = current.status === "running" ? (current.lengthSeconds || 300) :
     current.status === "pending" ? 120 : 0;
-  return { key, at: observedAt + seconds * 1000 };
+  return { key, at: observedAt + seconds * 1000, pauseOffset };
 }
 
 export function buildTimeline({ round, current, cadenceMinutes, fetchedAt, timing, now, driverKey, viewerRoundIsActive }) {

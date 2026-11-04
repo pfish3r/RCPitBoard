@@ -70,3 +70,57 @@ test('preserved LiveRC parsers read rounds and heat entries', () => {
   const sheet = parseHeatSheet('<div class="race_num">1</div><span class="class_header">2WD (Heat 1)</span><span class="race_length">Length: 5:00</span><span class="race_status">Not yet run</span><td>1</td><td><span class="car_num">3</span>Paul Fisher</td>');
   assert.equal(sheet.races[0].className, '2WD'); assert.equal(sheet.races[0].drivers[0].name, 'Paul Fisher');
 });
+
+test('shared pause freezes the feed, survives restart, and resumes with fresh data', async () => {
+  const directory = await mkdtemp(join(process.cwd(), 'rcpitboard-pause-test-'));
+  let calls = 0;
+  let release;
+  const options = { dataDir: directory, env: {}, getSnapshot: async () => {
+    const call = ++calls;
+    if (call === 2) await new Promise(resolve => { release = resolve; });
+    return { fetchedAt: new Date().toISOString(), current: { seq: call } };
+  } };
+  let server = await createApp(options);
+  async function request(path, method = 'GET', data, header = true) {
+    const req = Readable.from(data === undefined ? [] : [Buffer.from(JSON.stringify(data))]);
+    req.method = method; req.url = '/api/' + path;
+    req.headers = header ? { 'x-rcpitboard': '1' } : {};
+    return new Promise(resolve => server.emit('request', req, {
+      setHeader() {}, writeHead(status) { this.status = status; },
+      end(body) { resolve({ status: this.status, data: JSON.parse(body) }); },
+    }));
+  }
+  try {
+    assert.equal((await request('board', 'PUT', { paused: true }, false)).status, 403);
+    assert.equal((await request('board', 'PUT', { paused: 'yes' })).status, 400);
+    const initial = await request('snapshot');
+    assert.equal(initial.data.current.seq, 1);
+    const pause = await request('board', 'PUT', { paused: true });
+    assert.equal(pause.data.paused, true);
+    assert.equal((await request('board', 'PUT', { paused: true })).data.revision, pause.data.revision);
+    for (let i = 0; i < 3; i++) {
+      const frozen = await request('snapshot');
+      assert.equal(frozen.data.current.seq, 1);
+      assert.equal(frozen.data.board.pausedAt, pause.data.pausedAt);
+    }
+    assert.equal(calls, 1);
+    server = await createApp(options);
+    assert.equal((await request('snapshot')).data.current.seq, 1);
+    assert.equal((await request('board')).data.paused, true);
+    assert.equal(calls, 1);
+    await new Promise(resolve => setTimeout(resolve, 10));
+    const resumed = await request('board', 'PUT', { paused: false });
+    assert.equal(resumed.data.paused, false);
+    assert.ok(resumed.data.totalPausedMs > 0);
+    const loading = request('snapshot');
+    while (!release) await new Promise(resolve => setImmediate(resolve));
+    // A feed read already in progress must not update a paused display.
+    await request('board', 'PUT', { paused: true });
+    release();
+    const frozen = await loading;
+    assert.equal(frozen.data.board.paused, true);
+    assert.equal(frozen.data.current.seq, 1);
+    await request('board', 'PUT', { paused: false });
+    assert.equal((await request('snapshot')).data.current.seq, 3);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});

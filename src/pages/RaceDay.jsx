@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { TriangleAlert } from "lucide-react";
+import { TriangleAlert, Pause } from "lucide-react";
 import useRaceDaySnapshot from "@/hooks/useRaceDaySnapshot";
 import {
   DRIVER_KEY,
@@ -25,6 +25,7 @@ export default function RaceDay() {
   const [viewRoundId, setViewRoundId] = useState(null);
   const [showLive, setShowLive] = useState(() => localStorage.getItem(LIVE_PANEL_KEY) !== "off");
 
+  const paused = Boolean(snapshot?.board?.paused);
   const rounds = snapshot?.rounds || [];
   const activeRound = rounds.find((round) => round.id === snapshot?.activeRoundId) || rounds[0] || null;
   const viewRound = rounds.find((round) => round.id === viewRoundId) || activeRound;
@@ -79,8 +80,9 @@ export default function RaceDay() {
   const { enabled: audioOn, toggle: toggleAudio, settings: announcementSettings, changeSetting } = useAudioAnnouncements({
     current: snapshot?.current,
     timeline: activeTimeline,
+    paused,
   });
-  useHeatStartChime({ live: snapshot?.live, enabled: audioOn && announcementSettings.heatStartChime });
+  useHeatStartChime({ live: snapshot?.live, enabled: !paused && audioOn && announcementSettings.heatStartChime });
 
   // During the mains/finals the projection feed adds little: drop the panel and
   // give the live timing the full width instead.
@@ -127,6 +129,12 @@ export default function RaceDay() {
         refreshing={refreshing}
         updatedSeconds={updatedSeconds}
       />
+
+      {paused && (
+        <div role="status" className="flex shrink-0 items-center justify-center gap-2 border-y border-rd-border bg-rd-surface px-4 py-3 text-sm font-semibold text-rd-acctext">
+          <Pause className="h-4 w-4" /> Board paused. Race updates and countdowns will continue when resumed.
+        </div>
+      )}
 
       {loading && !snapshot ? (
         <main className="flex-1 px-4 py-4 sm:px-6">

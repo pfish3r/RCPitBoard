@@ -72,3 +72,13 @@ test('starting a new heat resets its anchor; other rounds have no countdown', ()
   assert.equal(rows[0].estimatedStartAt, null);
   assert.equal(rows[0].isNext, false);
 });
+
+test('resuming shifts an unchanged fallback estimate by the time spent paused', () => {
+  const fetchedAt = '2026-11-04T10:00:00Z';
+  const initial = { fetchedAt, current: { seq: 1, status: 'pending' } };
+  const timing = anchorRaceTiming(initial);
+  const resumed = anchorRaceTiming({ ...initial, fetchedAt: '2026-11-04T10:11:00Z',
+    board: { totalPausedMs: 600000 } }, timing);
+  assert.equal(resumed.at, timing.at + 600000);
+  assert.equal(anchorRaceTiming({ ...initial, board: { totalPausedMs: 600000 } }, resumed).at, resumed.at);
+});

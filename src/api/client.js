@@ -10,6 +10,10 @@ async function request(path, method = 'GET', body) {
   return data;
 }
 export const api = {
+  board: {
+    status: () => request('/board'),
+    pause: paused => request('/board', 'PUT', { paused }),
+  },
   entities: { TrackSettings: {
     filter: () => request('/settings').then(settings => ({ items: [settings] })),
     create: data => request('/settings', 'PUT', data),

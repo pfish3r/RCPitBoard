@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2, Check } from "lucide-react";
+import { ArrowLeft, Loader2, Check, Pause, Play } from "lucide-react";
 import { api } from "@/api/client";
 import RefreshRateField from "@/components/admin/RefreshRateField";
 import {
@@ -13,6 +13,9 @@ import {
 } from "@/lib/trackDefaults";
 
 export default function Admin() {
+  const [board, setBoard] = useState(null);
+  const [pausing, setPausing] = useState(false);
+  const [pauseError, setPauseError] = useState("");
   const [loading, setLoading] = useState(true);
   const [recordId, setRecordId] = useState(null);
   const [liveUrl, setLiveUrl] = useState("");
@@ -45,6 +48,24 @@ export default function Admin() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const load = () => api.board.status().then(value => {
+      if (active) { setBoard(value); setPauseError(""); }
+    }).catch(err => { if (active) setPauseError(err.message); });
+    load();
+    const poll = setInterval(load, 3000);
+    return () => { active = false; clearInterval(poll); };
+  }, []);
+
+  const togglePause = async () => {
+    setPausing(true);
+    setPauseError("");
+    try { setBoard(await api.board.pause(!board.paused)); }
+    catch (err) { setPauseError(err.message || "Could not change board status"); }
+    finally { setPausing(false); }
+  };
 
   const save = async (event) => {
     event.preventDefault();
@@ -89,6 +110,23 @@ export default function Admin() {
           Point the pit board at your track's LiveRC pages and set how the lists scroll. Changes reach the
           board on its next refresh.
         </p>
+
+        <section className="mt-6 rounded-xl border border-rd-border bg-rd-surface p-4" aria-label="Board controls">
+          <h2 className="font-display text-xl uppercase text-rd-bright">{board?.paused ? "Board paused" : "Pause pit board"}</h2>
+          <p className="mt-2 text-sm text-rd-muted">
+            Freeze race updates and countdowns on all screens during a break. Announcements are muted while paused.
+          </p>
+          <button
+            type="button"
+            onClick={togglePause}
+            disabled={!board || pausing}
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-rd-accent px-5 py-2.5 text-sm font-semibold text-rd-ink disabled:opacity-50"
+          >
+            {pausing ? <Loader2 className="h-4 w-4 animate-spin" /> : board?.paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+            {board?.paused ? "Resume board" : "Pause board"}
+          </button>
+          {pauseError && <p role="alert" className="mt-3 text-sm text-rd-live">{pauseError}</p>}
+        </section>
 
         {loading ? (
           <div className="mt-8 flex items-center gap-2 text-sm text-rd-muted">
