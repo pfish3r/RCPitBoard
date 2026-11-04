@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Activity, Radio, RefreshCw, Settings2, Video } from "lucide-react";
+import { Activity, Radio, RefreshCw, Settings2, Video, Monitor, Maximize, Minimize } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ThemeToggle from "@/components/raceday/ThemeToggle";
 import AudioToggle from "@/components/raceday/AudioToggle";
@@ -23,14 +23,15 @@ export default function RaceDayHeader({
   onRefresh,
   refreshing,
   updatedSeconds,
+  tvMode, onToggleTv, fullscreen, onToggleFullscreen, feedHealthy,
 }) {
   return (
     <TooltipProvider delayDuration={150}>
       <header className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-rd-border px-4 py-2.5 sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <span className="relative flex h-2 w-2 shrink-0">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff4d3d] opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#ff4d3d]" />
+            <span className={`absolute inline-flex h-full w-full rounded-full bg-rd-accent opacity-75 ${feedHealthy ? "animate-ping" : "hidden"}`} />
+            <span className={`relative inline-flex h-2 w-2 rounded-full ${feedHealthy ? "bg-rd-accent" : "bg-rd-muted"}`} />
           </span>
           <div className="min-w-0">
             <h1 className="truncate font-display text-2xl font-semibold uppercase leading-none tracking-tight text-rd-bright lg:text-3xl">
@@ -44,7 +45,7 @@ export default function RaceDayHeader({
         </div>
 
         <div className="order-3 flex w-full flex-wrap items-center justify-center gap-2 sm:order-none sm:w-auto sm:flex-1">
-          {current?.seq > 0 && (
+          {!tvMode && feedHealthy && current?.seq > 0 && (
             <div className="flex items-center gap-3 rounded-xl border border-[#c6f24e]/45 bg-[#c6f24e]/[0.08] px-3 py-1.5">
               <span className="font-display text-[10px] font-semibold uppercase tracking-[0.22em] text-rd-acctext">
                 {current.status === "running" ? "On track" : "Staging"}
@@ -60,7 +61,7 @@ export default function RaceDayHeader({
             </div>
           )}
 
-          <div className="flex items-center gap-1.5">
+          <div className="tv-secondary-controls flex items-center gap-1.5">
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -113,7 +114,13 @@ export default function RaceDayHeader({
         </div>
 
         <div className="ml-auto flex items-center gap-2 sm:ml-0">
-          <span className="hidden w-16 shrink-0 text-right text-[10px] uppercase tabular-nums tracking-[0.18em] text-rd-faint sm:inline-block">
+          <button type="button" onClick={onToggleTv} aria-pressed={tvMode} className={`${iconButton} w-auto gap-2 border-rd-border px-3`} title={tvMode ? "Exit TV mode" : "TV mode"}>
+            <Monitor className="h-4 w-4" /><span className="text-xs">{tvMode ? "Exit TV" : "TV mode"}</span>
+          </button>
+          <button type="button" onClick={onToggleFullscreen} aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"} className={`${iconButton} border-rd-border`}>
+            {fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+          </button>
+          <span className="tv-secondary-controls hidden w-16 shrink-0 text-right text-[10px] uppercase tabular-nums tracking-[0.18em] text-rd-faint sm:inline-block">
             {updatedSeconds ?? 0}s ago
           </span>
           <Tooltip>
@@ -129,8 +136,10 @@ export default function RaceDayHeader({
             </TooltipTrigger>
             <TooltipContent>Refresh</TooltipContent>
           </Tooltip>
+          <div className="tv-secondary-controls flex items-center gap-2">
           <AudioToggle enabled={audioOn} onToggle={onToggleAudio} settings={announcementSettings} onSettingChange={onAnnouncementSettingChange} />
           <ThemeToggle />
+          </div>
           <Tooltip>
             <TooltipTrigger asChild>
               <Link

@@ -4,6 +4,7 @@ import { resolve, extname, dirname, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { randomBytes } from 'node:crypto';
 import snapshot from './snapshot.js';
+import { observeRaceTiming, raceEstimate } from './race-estimates.js';
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const defaults = { id: 'track', live_url: 'https://lprcoffroad.liverc.com/live/',
@@ -44,6 +45,10 @@ export async function createApp(options = {}) {
   let board = { paused: false, pausedAt: null, totalPausedMs: 0, revision: 'initial', snapshot: null };
   try { board = { ...board, ...JSON.parse(await readFile(boardFile, 'utf8')) }; }
   catch (err) { if (err.code !== 'ENOENT') throw new Error(`Cannot read board state: ${err.message}`); }
+  const estimatesFile = resolve(dataDir, 'estimates.json');
+  let estimates = null, interrupted = true;
+  try { estimates = JSON.parse(await readFile(estimatesFile, 'utf8')); }
+  catch (err) { if (err.code !== 'ENOENT') console.error('Could not restore race estimates:', err.message); }
   let lastSnapshot = board.snapshot;
   let cached, pending, controlQueue = Promise.resolve();
   const boardStatus = () => {
@@ -65,6 +70,7 @@ export async function createApp(options = {}) {
       await writeFile(tmp, JSON.stringify(next), { mode: 0o600 });
       await rename(tmp, boardFile);
       board = next;
+      interrupted = true;
       if (!paused) { cached = null; pending = null; }
     });
     controlQueue = task.catch(() => {});
@@ -121,12 +127,24 @@ export async function createApp(options = {}) {
           if (cached?.key === cacheKey && Date.now() - cached.at < settings.refresh_seconds * 1000) return json(res, 200, boardSnapshot(cached.data));
           if (!pending || pending.key !== cacheKey) {
             const task = { key: cacheKey };
-            task.promise = getSnapshot({ ...settings }).then(data => {
+            task.promise = getSnapshot({ ...settings }).then(async data => {
               if (!board.paused && board.revision === revision && JSON.stringify(settings) === cacheKey) {
-                cached = { key: cacheKey, at: Date.now(), data };
-                lastSnapshot = data;
+                estimates = observeRaceTiming(estimates, data, interrupted);
+                interrupted = data.feed?.liveConnected === false;
+                data = { ...data, timingEstimate: raceEstimate(estimates, data) };
+                // One shared feed task writes the learned samples for all screens.
+                const tmp = `${estimatesFile}.tmp`;
+                try { await writeFile(tmp, JSON.stringify(estimates), { mode: 0o600 }); await rename(tmp, estimatesFile); }
+                catch (err) { console.error('Could not save race estimates:', err.message); }
+                if (!board.paused && board.revision === revision && JSON.stringify(settings) === cacheKey) {
+                  cached = { key: cacheKey, at: Date.now(), data };
+                  lastSnapshot = data;
+                }
               }
               return data;
+            }).catch(error => {
+              interrupted = true;
+              throw error;
             }).finally(() => { if (pending === task) pending = null; });
             pending = task;
           }

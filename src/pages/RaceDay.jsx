@@ -10,6 +10,9 @@ import {
   nextRaceForDriver,
 } from "@/lib/raceday";
 import { DEFAULT_LIVE_URL, DEFAULT_RESULTS_URL, DEFAULT_SCROLL_SPEED } from "@/lib/trackDefaults";
+import RaceSpotlight from "@/components/raceday/RaceSpotlight";
+import FeedStatus from "@/components/raceday/FeedStatus";
+import useTvMode from "@/hooks/useTvMode";
 import RaceDayHeader from "@/components/raceday/RaceDayHeader";
 import RoundTabs from "@/components/raceday/RoundTabs";
 import RaceOrder from "@/components/raceday/RaceOrder";
@@ -20,15 +23,19 @@ import useAudioAnnouncements from "@/hooks/useAudioAnnouncements";
 import useHeatStartChime from "@/hooks/useHeatStartChime";
 
 export default function RaceDay() {
-  const { snapshot, error, loading, refreshing, refresh, now } = useRaceDaySnapshot();
+  const { snapshot, error, loading, refreshing, refresh, now, health, wallNow } = useRaceDaySnapshot();
+  const { tvMode, toggleTv, fullscreen, toggleFullscreen, fullscreenError } = useTvMode();
   const [driverKey, setDriverKey] = useState(() => localStorage.getItem(DRIVER_KEY) || "");
   const [viewRoundId, setViewRoundId] = useState(null);
   const [showLive, setShowLive] = useState(() => localStorage.getItem(LIVE_PANEL_KEY) !== "off");
 
+  const displayLive = tvMode || showLive;
   const paused = Boolean(snapshot?.board?.paused);
+  const estimatesAvailable = health.estimatesAvailable || paused;
   const rounds = snapshot?.rounds || [];
   const activeRound = rounds.find((round) => round.id === snapshot?.activeRoundId) || rounds[0] || null;
-  const viewRound = rounds.find((round) => round.id === viewRoundId) || activeRound;
+  const selectedRound = rounds.find((round) => round.id === viewRoundId) || activeRound;
+  const viewRound = tvMode ? activeRound : selectedRound;
   const isActiveRound = viewRound && activeRound ? viewRound.id === activeRound.id : false;
 
   const drivers = useMemo(() => collectDrivers(rounds), [rounds]);
@@ -41,11 +48,13 @@ export default function RaceDay() {
         cadenceMinutes: snapshot?.cadenceMinutes,
         fetchedAt: snapshot?.fetchedAt,
         timing: snapshot?.timing,
+        timingEstimate: snapshot?.timingEstimate,
+        estimatesAvailable,
         now,
         driverKey,
         viewerRoundIsActive: isActiveRound,
       }),
-    [viewRound, snapshot?.current, snapshot?.cadenceMinutes, snapshot?.fetchedAt, snapshot?.timing, now, driverKey, isActiveRound]
+    [viewRound, snapshot?.current, snapshot?.cadenceMinutes, snapshot?.fetchedAt, snapshot?.timing, snapshot?.timingEstimate, estimatesAvailable, now, driverKey, isActiveRound]
   );
 
   const visibleTimeline = useMemo(
@@ -63,11 +72,13 @@ export default function RaceDay() {
             cadenceMinutes: snapshot?.cadenceMinutes,
             fetchedAt: snapshot?.fetchedAt,
             timing: snapshot?.timing,
+            timingEstimate: snapshot?.timingEstimate,
+            estimatesAvailable,
             now,
             driverKey,
             viewerRoundIsActive: true,
           }),
-    [isActiveRound, timeline, activeRound, snapshot?.current, snapshot?.cadenceMinutes, snapshot?.fetchedAt, snapshot?.timing, now, driverKey]
+    [isActiveRound, timeline, activeRound, snapshot?.current, snapshot?.cadenceMinutes, snapshot?.fetchedAt, snapshot?.timing, snapshot?.timingEstimate, estimatesAvailable, now, driverKey]
   );
 
   const myRace = useMemo(
@@ -80,13 +91,13 @@ export default function RaceDay() {
   const { enabled: audioOn, toggle: toggleAudio, settings: announcementSettings, changeSetting } = useAudioAnnouncements({
     current: snapshot?.current,
     timeline: activeTimeline,
-    paused,
+    paused: paused || !health.estimatesAvailable,
   });
-  useHeatStartChime({ live: snapshot?.live, enabled: !paused && audioOn && announcementSettings.heatStartChime });
+  useHeatStartChime({ live: snapshot?.live, enabled: health.estimatesAvailable && !paused && audioOn && announcementSettings.heatStartChime });
 
   // During the mains/finals the projection feed adds little: drop the panel and
   // give the live timing the full width instead.
-  const showEpd = !isFinalsRound(activeRound?.label);
+  const showEpd = !tvMode && !isFinalsRound(activeRound?.label);
 
   const scrollSpeed = snapshot?.track?.scrollSpeed || DEFAULT_SCROLL_SPEED;
 
@@ -108,12 +119,17 @@ export default function RaceDay() {
   };
 
   const updatedSeconds = snapshot?.fetchedAt
-    ? Math.max(0, Math.round((now - new Date(snapshot.fetchedAt).getTime()) / 1000))
+    ? Math.max(0, Math.round((wallNow - new Date(snapshot.fetchedAt).getTime()) / 1000))
     : 0;
 
   return (
-    <div className="flex min-h-screen flex-col bg-rd-bg font-body text-rd-text lg:h-screen lg:overflow-hidden">
+    <div className={`${tvMode ? "tv-mode " : ""}flex min-h-screen flex-col bg-rd-bg font-body text-rd-text lg:h-screen lg:overflow-hidden`}>
       <RaceDayHeader
+        feedHealthy={health.estimatesAvailable}
+        tvMode={tvMode}
+        onToggleTv={toggleTv}
+        fullscreen={fullscreen}
+        onToggleFullscreen={toggleFullscreen}
         track={snapshot?.track}
         event={snapshot?.event}
         current={snapshot?.current}
@@ -129,6 +145,10 @@ export default function RaceDay() {
         refreshing={refreshing}
         updatedSeconds={updatedSeconds}
       />
+
+      <FeedStatus health={health} />
+      {fullscreenError && <p role="status" className="px-6 py-2 text-sm text-rd-muted">{fullscreenError}</p>}
+      {snapshot && <RaceSpotlight current={snapshot.current} timeline={activeTimeline} timing={snapshot.timing} now={now} health={health} paused={paused} estimate={snapshot.timingEstimate} />}
 
       {paused && (
         <div role="status" className="flex shrink-0 items-center justify-center gap-2 border-y border-rd-border bg-rd-surface px-4 py-3 text-sm font-semibold text-rd-acctext">
@@ -163,7 +183,7 @@ export default function RaceDay() {
         </main>
       ) : (
         <>
-          <div className="shrink-0 px-4 pt-2 sm:px-6">
+          <div className={`${tvMode ? "hidden" : ""} shrink-0 px-4 pt-2 sm:px-6`}>
             <RoundTabs
               rounds={rounds}
               activeRoundId={snapshot?.activeRoundId}
@@ -178,19 +198,19 @@ export default function RaceDay() {
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
             <main
               className={`px-4 pb-4 pt-3 sm:px-6 lg:min-h-0 lg:min-w-0 lg:overflow-hidden ${
-                showLive ? "lg:w-2/5 lg:shrink-0" : "lg:flex-1"
+                displayLive ? "lg:w-2/5 lg:shrink-0" : "lg:flex-1"
               }`}
             >
               <RaceOrder
                 timeline={visibleTimeline}
                 roundLabel={viewRound?.label}
                 isActiveRound={isActiveRound}
-                cadenceMinutes={snapshot?.cadenceMinutes}
+                timingEstimate={snapshot?.timingEstimate}
                 scrollSpeed={scrollSpeed}
               />
             </main>
 
-            {showLive && (
+            {displayLive && (
               <aside className="shrink-0 border-t border-rd-border px-4 pb-4 pt-4 sm:px-6 lg:min-h-0 lg:min-w-0 lg:flex-1 lg:overflow-hidden lg:border-l lg:border-t-0">
                 <div
                   className={`grid gap-4 lg:h-full lg:min-h-0 ${
@@ -203,6 +223,8 @@ export default function RaceDay() {
                     live={snapshot?.live}
                     driverKey={driverKey}
                     wide={!showEpd}
+                    tvMode={tvMode}
+                    stale={!health.estimatesAvailable}
                     scrollSpeed={scrollSpeed}
                   />
                   {showEpd && (
@@ -218,14 +240,14 @@ export default function RaceDay() {
             )}
           </div>
 
-          <DriverBar
+          {!tvMode && <DriverBar
             drivers={drivers}
             driverKey={driverKey}
             myRace={myRace}
             emptyMessage={emptyMessage}
             onSelect={pickDriver}
             onClear={() => pickDriver("")}
-          />
+          />}
         </>
       )}
     </div>

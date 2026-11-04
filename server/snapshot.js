@@ -195,6 +195,8 @@ export default async function (saved) {
 
     return Response.json({
       fetchedAt: new Date().toISOString(),
+      feed: { liveConnected: Boolean(live), liveReceivedAt: live?.receivedAt || null,
+        resultsComplete: sheetHtmls.every(Boolean) },
       track: {
         name: index.trackName || TRACK_NAME,
         liveUrl,

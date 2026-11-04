@@ -48,17 +48,20 @@ export function anchorRaceTiming(snapshot, previous) {
     return { key, at: observedAt + Math.max(0, remaining) * 1000, remainingSeconds: remaining, pauseOffset };
   }
   if (previous?.key === key) return previous;
+  const gap = snapshot.timingEstimate?.turnaroundSeconds ?? 120;
   const seconds = current.status === "running" ? (current.lengthSeconds || 300) :
-    current.status === "pending" ? 120 : 0;
-  return { key, at: observedAt + seconds * 1000, pauseOffset };
+    current.status === "pending" ? gap : 0;
+  return { key, at: current.status === "pending" && Number.isFinite(snapshot.timingEstimate?.stagingStartAt)
+    ? snapshot.timingEstimate.stagingStartAt : observedAt + seconds * 1000, pauseOffset };
 }
 
-export function buildTimeline({ round, current, cadenceMinutes, fetchedAt, timing, now, driverKey, viewerRoundIsActive }) {
+export function buildTimeline({ round, current, cadenceMinutes, fetchedAt, timing, timingEstimate, estimatesAvailable = true, now, driverKey, viewerRoundIsActive }) {
   if (!round) return [];
   const races = round.races || [];
   const cadence = cadenceMinutes || 9;
   const seqNow = viewerRoundIsActive && current ? current.seq : null;
   const reference = timing?.at ?? anchorRaceTiming({ current, fetchedAt })?.at;
+  const gap = timingEstimate?.turnaroundSeconds ?? 120;
   const running = current?.status === "running";
 
   return races.map((race, index) => {
@@ -74,15 +77,18 @@ export function buildTimeline({ round, current, cadenceMinutes, fetchedAt, timin
       if (Number.isFinite(reference)) {
         // A pending current race is the next race to start, not a full race
         // still to run. A running race needs only its remaining time plus the gap.
-        estimatedStartAt = running
-          ? racesAway <= 0 ? null : reference + 120000 + (racesAway - 1) * cadence * 60000
-          : reference + Math.max(0, racesAway) * cadence * 60000;
-        secondsAhead = estimatedStartAt === null ? 0 : Math.max(0, Math.ceil((estimatedStartAt - now) / 1000));
-        minutesAhead = Math.ceil(secondsAhead / 60);
+        const firstFuture = running ? seqNow : seqNow - 1;
+        const offset = races.slice(firstFuture, index).reduce((sum, preceding) =>
+          sum + (preceding.lengthSeconds > 0 ? preceding.lengthSeconds + gap : cadence * 60), 0);
+        estimatedStartAt = !estimatesAvailable || (running && racesAway <= 0) || racesAway < 0 ? null
+          : reference + (running ? gap * 1000 : 0) + offset * 1000;
+        secondsAhead = estimatedStartAt === null ? null : Math.max(0, Math.ceil((estimatedStartAt - now) / 1000));
+        minutesAhead = secondsAhead === null ? null : Math.ceil(secondsAhead / 60);
       }
     }
     const isNext = viewerRoundIsActive && race.status !== "complete" && racesAway === (running ? 1 : 0);
-    return { ...race, seq, mine, myEntry, racesAway, minutesAhead, secondsAhead, estimatedStartAt, isNext };
+    return { ...race, seq, mine, myEntry, racesAway, minutesAhead, secondsAhead, estimatedStartAt, isNext, estimatesUnavailable: !estimatesAvailable,
+      overdue: estimatedStartAt !== null && now > estimatedStartAt + 60000 };
   });
 }
 

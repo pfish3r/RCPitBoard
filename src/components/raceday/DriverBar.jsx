@@ -88,7 +88,9 @@ export default function DriverBar({ drivers, driverKey, myRace, emptyMessage, on
               </div>
 
               <div className="ml-auto text-right">
-                {onLine ? (
+                {myRace.estimatesUnavailable ? (
+                  <p className="text-sm uppercase tracking-[0.14em] text-rd-muted">Timing unavailable</p>
+                ) : onLine ? (
                   <p className="font-display text-2xl font-semibold uppercase leading-none text-rd-acctext lg:text-3xl">
                     Head to the line
                   </p>
@@ -100,7 +102,7 @@ export default function DriverBar({ drivers, driverKey, myRace, emptyMessage, on
                         : "Pit time left"}
                     </p>
                     <p className="font-display text-3xl font-semibold leading-none text-rd-acctext lg:text-4xl">
-                      ~{formatCountdown(myRace.secondsAhead)}
+                      {myRace.overdue ? "Running behind estimate" : `~${formatCountdown(myRace.secondsAhead)}`}
                     </p>
                     <p className="text-[10px] uppercase tracking-[0.16em] text-rd-faint">
                       est. {formatClock(myRace.estimatedStartAt)}

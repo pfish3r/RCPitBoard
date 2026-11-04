@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/api/client";
 import { DEFAULT_REFRESH_SECONDS } from "@/lib/trackDefaults";
+import { feedHealth, timingActivity } from "@/lib/feedHealth";
 import { anchorRaceTiming } from "@/lib/raceday";
 
 export default function useRaceDaySnapshot() {
@@ -22,6 +23,10 @@ export default function useRaceDaySnapshot() {
       if (response.data?.error) throw new Error(response.data.error);
       setSnapshot(previous => ({
         ...response.data,
+        live: response.data.live || previous?.live,
+        feed: response.data.feed ? { ...response.data.feed,
+          liveReceivedAt: response.data.feed.liveReceivedAt || previous?.feed?.liveReceivedAt } : undefined,
+        activity: timingActivity(response.data, previous?.activity),
         timing: anchorRaceTiming(response.data, previous?.timing),
       }));
       setError(null);
@@ -63,5 +68,6 @@ export default function useRaceDaySnapshot() {
   }, [load]);
 
   const boardNow = snapshot?.board?.paused ? snapshot.board.pausedAt : now;
-  return { snapshot, error, loading, refreshing, refresh: load, now: boardNow };
+  const health = feedHealth(snapshot, error, now);
+  return { snapshot, health, wallNow: now, error, loading, refreshing, refresh: load, now: boardNow };
 }

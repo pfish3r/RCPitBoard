@@ -337,7 +337,8 @@ export async function fetchLiveScoring(liveUrl = LIVE_URL) {
     if (packet?.name === "updateDriverData") state.drivers = value;
   }
 
-  const data = buildLive(state);
+  const live = buildLive(state);
+  const data = live ? { ...live, receivedAt: new Date().toISOString() } : null;
   if (data) liveCache = { at: Date.now(), data, url: liveUrl };
   return data;
 }

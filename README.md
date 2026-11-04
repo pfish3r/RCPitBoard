@@ -63,6 +63,16 @@ npm start
 
 For frontend development run npm start and npm run dev in separate terminals. Vite proxies /api to localhost:3000. The production server serves only dist and the API, never source files or .env.
 
+## Race display and TV mode
+
+The **On track** and **Next up** panels show the current class, heat and estimated countdown above the race order. Start times are estimates, not an official timetable. An estimate more than a minute overdue is labelled as running behind.
+
+The server learns the median turnaround from up to nine adjacent race transitions in the same meeting, combining it with each published race length. Until it has a usable sample it uses a two-minute gap. Pauses, skipped heats, extended outages and gaps over ten minutes are excluded. Samples are shared by every screen, saved in the data volume, and reset when the track or meeting changes. Polling and LiveRC clock accuracy limit the precision.
+
+The feed status shows when live timing was last received. A failed live feed, incomplete race order, stale response or a racing clock that stops advancing suspends countdown estimates and mutes announcements. Last known race data remains labelled until timing recovers. A stationary feed while staging or finished is normal and does not trigger the racing-clock warning. Intentional admin pause still freezes the display.
+
+Use **TV mode** in the header for larger race cards and live results, fewer controls, and the active round. In TV mode, live results occupy the right-hand panel and estimated positions are hidden for readability; normal mode retains both. The mode is remembered on that browser and can also be opened with `/?tv=1`. Use the adjacent fullscreen button to fill the display; browser permission may be required. Exit TV restores the normal controls. Fullscreen must be entered manually after a reload.
+
 ## Validation and limitations
 
 Automated tests cover startup and settings changes without credentials, persistence across restart, shared snapshot caching, URL validation and static-file isolation, plus the retained heat-sheet and results parsers. GitHub Actions runs tests and the frontend build on Linux. The Docker build also runs the tests before producing its runtime image.

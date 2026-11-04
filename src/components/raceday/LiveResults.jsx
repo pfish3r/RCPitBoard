@@ -1,12 +1,12 @@
 import React from "react";
-import LiveResultRow, { LIVE_RESULT_GRID, LIVE_RESULT_GRID_WIDE } from "@/components/raceday/LiveResultRow";
+import LiveResultRow, { LIVE_RESULT_GRID, LIVE_RESULT_GRID_WIDE, LIVE_RESULT_GRID_TV } from "@/components/raceday/LiveResultRow";
 import AutoScrollColumn from "@/components/raceday/AutoScrollColumn";
 import { normalizeName, prettyName } from "@/lib/raceday";
 import { clashingShortNames } from "@/components/raceday/DriverName";
 
 const STATUS_LABEL = { running: "Racing", staging: "Staging", complete: "Finished" };
 
-export default function LiveResults({ live, driverKey, wide, scrollSpeed }) {
+export default function LiveResults({ live, driverKey, wide, scrollSpeed, tvMode, stale }) {
   const rows = live?.rows || [];
   const status = live?.status || "";
   const clashes = clashingShortNames(rows.map((row) => prettyName(row.name)));
@@ -16,7 +16,7 @@ export default function LiveResults({ live, driverKey, wide, scrollSpeed }) {
       : "";
 
   return (
-    <section className="flex flex-col gap-2.5 lg:h-full lg:min-h-0 lg:overflow-hidden">
+    <section className="live-results flex flex-col gap-2.5 lg:h-full lg:min-h-0 lg:overflow-hidden">
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-display text-lg uppercase leading-none tracking-wide text-rd-bright">
           Live results
@@ -24,12 +24,12 @@ export default function LiveResults({ live, driverKey, wide, scrollSpeed }) {
         {status && (
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] ${
-              status === "running"
+              status === "running" && !stale
                 ? "bg-[#ff4d3d]/15 text-rd-live"
                 : "bg-rd-surface text-rd-muted"
             }`}
           >
-            {STATUS_LABEL[status] || status}
+            {STATUS_LABEL[status] || status}{stale ? " · last known" : ""}
           </span>
         )}
       </div>
@@ -47,7 +47,7 @@ export default function LiveResults({ live, driverKey, wide, scrollSpeed }) {
       {rows.length ? (
         <div className="flex min-h-0 min-w-0 flex-col gap-1 overflow-x-auto lg:flex-1 lg:overflow-hidden">
           <div
-            className={`grid min-w-[24rem] ${wide ? LIVE_RESULT_GRID_WIDE : LIVE_RESULT_GRID} pb-1 text-[9px] uppercase tracking-[0.1em] text-rd-faint ${
+            className={`grid min-w-[24rem] ${tvMode ? LIVE_RESULT_GRID_TV : wide ? LIVE_RESULT_GRID_WIDE : LIVE_RESULT_GRID} pb-1 text-[9px] uppercase tracking-[0.1em] text-rd-faint ${
               wide ? "gap-1.5 px-2.5" : "gap-1.5 px-1.5"
             }`}
           >
@@ -70,6 +70,7 @@ export default function LiveResults({ live, driverKey, wide, scrollSpeed }) {
                   key={`${row.pos}-${row.name}`}
                   row={row}
                   wide={wide}
+                  tvMode={tvMode}
                   clashes={clashes}
                   mine={Boolean(driverKey) && normalizeName(row.name) === driverKey}
                 />

@@ -3,6 +3,7 @@ import { prettyName } from "@/lib/raceday";
 import DriverName from "@/components/raceday/DriverName";
 
 export const LIVE_RESULT_GRID = "grid-cols-[1.4rem_1.9rem_minmax(0,1fr)_1.4rem_2.8rem_2.6rem_6.25rem]";
+export const LIVE_RESULT_GRID_TV = "grid-cols-[2rem_2.6rem_minmax(0,1fr)_2rem_5rem_4rem_9rem]";
 export const LIVE_RESULT_GRID_WIDE = "grid-cols-[2rem_2.6rem_minmax(0,1fr)_2rem_4rem_3.4rem_7rem]";
 
 function gapLabel(value) {
@@ -13,12 +14,12 @@ function gapLabel(value) {
   return gap;
 }
 
-export default function LiveResultRow({ row, mine, wide, clashes }) {
+export default function LiveResultRow({ row, mine, wide, clashes, tvMode }) {
   const podium = row.pos >= 1 && row.pos <= 3;
 
   return (
     <div
-      className={`grid ${wide ? LIVE_RESULT_GRID_WIDE : LIVE_RESULT_GRID} items-center gap-1.5 rounded-lg border ${wide ? "px-2.5 py-2.5" : "px-1.5 py-1.5"} ${
+      className={`live-result-row grid ${tvMode ? LIVE_RESULT_GRID_TV : wide ? LIVE_RESULT_GRID_WIDE : LIVE_RESULT_GRID} items-center gap-1.5 rounded-lg border ${wide ? "px-2.5 py-2.5" : "px-1.5 py-1.5"} ${
         mine
           ? "border-[#c6f24e]/45 bg-[#c6f24e]/[0.12]"
           : podium
@@ -43,7 +44,7 @@ export default function LiveResultRow({ row, mine, wide, clashes }) {
       <DriverName
         name={prettyName(row.name)}
         clashes={clashes}
-        fullName={wide}
+        fullName={wide || tvMode}
         className={`text-rd-bright ${wide ? "text-[15px]" : "text-[13px]"}`}
       />
       <span className={`text-right font-mono text-rd-bright ${wide ? "text-sm" : "text-xs"}`}>
@@ -69,7 +70,7 @@ export default function LiveResultRow({ row, mine, wide, clashes }) {
           wide ? "text-xs" : "text-[10px]"
         }`}
       >
-        {row.pace || "-"}
+        {tvMode ? String(row.pace || "-").replace(/(\d+:\d{2})\.\d+/, "$1") : row.pace || "-"}
       </span>
     </div>
   );

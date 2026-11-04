@@ -130,3 +130,19 @@
     @apply bg-background text-foreground font-body;
   }
 }
+/* TV mode keeps a 40/60 split and dedicates the results side to readable timing. */
+.tv-mode .tv-secondary-controls { display: none; }
+.tv-mode .race-card { min-height: 6rem; }
+.tv-mode .race-card p:first-child { font-size: 1.5rem; }
+.tv-mode .race-card p + p { font-size: 0.875rem; }
+.tv-mode .race-card > div:last-child > span { font-size: 1.5rem; }
+.tv-mode .feed-status { font-size: 1rem; }
+.tv-mode .live-results h2 { font-size: 1.75rem; }
+.tv-mode .live-result-row { padding-block: 0.85rem; }
+.tv-mode .live-result-row > * { font-size: clamp(1.1rem, 1.25vw, 1.5rem); }
+.tv-mode .live-result-row > :first-child { font-size: 1.75rem; }
+@media (min-width: 1024px) {
+  .tv-mode .spotlight-clock { font-size: clamp(2.5rem, 3.4vw, 4.5rem); }
+  .tv-mode .spotlight-label { font-size: 1rem; }
+  .tv-mode .live-results > div:nth-child(2) { font-size: 1rem; }
+}

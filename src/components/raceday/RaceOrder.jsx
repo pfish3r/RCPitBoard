@@ -8,7 +8,7 @@ export default function RaceOrder({
   timeline,
   roundLabel,
   isActiveRound,
-  cadenceMinutes,
+  timingEstimate,
   scrollSpeed,
 }) {
   const pinned = timeline.slice(0, PINNED);
@@ -23,7 +23,7 @@ export default function RaceOrder({
         <p className="text-[10px] uppercase tracking-[0.18em] text-rd-faint lg:text-[11px]">
           {roundLabel ? `${roundLabel} · ` : ""}
           {timeline.length} {timeline.length === 1 ? "race" : "races"}
-          {isActiveRound ? ` · ~${cadenceMinutes || 9} min per race` : " · lineup only"}
+          {isActiveRound ? ` · Est. gap ${Math.round((timingEstimate?.turnaroundSeconds ?? 120) / 6) / 10} min${timingEstimate?.samples ? " · learned" : " · learning"}` : " · lineup only"}
         </p>
       </div>
 

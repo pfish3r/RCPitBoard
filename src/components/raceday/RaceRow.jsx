@@ -10,7 +10,7 @@ export default function RaceRow({ race, isActiveRound }) {
 
   return (
     <div
-      className={`grid h-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 rounded-xl border px-3 py-2.5 transition lg:px-4 ${
+      className={`race-card grid h-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 rounded-xl border px-3 py-2.5 transition lg:px-4 ${
         onNow
           ? "border-[#c6f24e]/60 bg-[#c6f24e]/[0.08]"
           : race.mine
@@ -51,7 +51,7 @@ export default function RaceRow({ race, isActiveRound }) {
           </span>
         ) : onNow ? (
           <span className="font-display text-2xl font-semibold uppercase leading-none tracking-wide text-rd-acctext lg:text-3xl">
-            On now
+            {race.estimatesUnavailable ? "Last on track" : "On now"}
           </span>
         ) : isNext && hasEta ? (
           <>
@@ -59,20 +59,20 @@ export default function RaceRow({ race, isActiveRound }) {
               Next up
             </span>
             <span className="block text-sm text-rd-muted lg:text-base">
-              ~{formatCountdown(race.secondsAhead)} · {formatClock(race.estimatedStartAt)}
+              {race.overdue ? "Delayed" : `~${formatCountdown(race.secondsAhead)}`} · {formatClock(race.estimatedStartAt)}
             </span>
           </>
         ) : hasEta ? (
           <>
             <span className="block font-display text-2xl font-semibold leading-none text-rd-bright lg:text-3xl">
-              ~{formatCountdown(race.secondsAhead)}
+              {race.overdue ? "Delayed" : `~${formatCountdown(race.secondsAhead)}`}
             </span>
             <span className="block text-sm text-rd-faint lg:text-base">
               {formatClock(race.estimatedStartAt)}
             </span>
           </>
         ) : (
-          <span className="text-[11px] uppercase tracking-[0.14em] text-rd-faint">Pending</span>
+          <span className="text-[11px] uppercase tracking-[0.14em] text-rd-faint">{race.estimatesUnavailable ? "ETA unavailable" : "Pending"}</span>
         )}
       </div>
     </div>
