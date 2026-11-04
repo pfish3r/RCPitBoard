@@ -71,7 +71,7 @@ The server learns the median turnaround from up to nine adjacent race transition
 
 The feed status shows when live timing was last received. A failed live feed, incomplete race order, stale response or a racing clock that stops advancing suspends countdown estimates and mutes announcements. Last known race data remains labelled until timing recovers. A stationary feed while staging or finished is normal and does not trigger the racing-clock warning. Intentional admin pause still freezes the display.
 
-Use **TV mode** in the header for larger race cards and live results, fewer controls, and the active round. In TV mode, live results and estimated positions are stacked on the right so both remain visible. Finals continue to use the full results panel. The mode is remembered on that browser and can also be opened with `/?tv=1`. Use the adjacent fullscreen button to fill the display; browser permission may be required. Exit TV restores the normal controls. Fullscreen must be entered manually after a reload.
+Use **TV mode** in the header for larger race cards and live results, fewer controls, and the active round. On desktop, race order, live results and estimated positions appear in three columns (35% / 40% / 25%), including TV mode. Smaller screens stack the panels vertically. Finals continue to use the full results panel. The mode is remembered on that browser and can also be opened with `/?tv=1`. Use the adjacent fullscreen button to fill the display; browser permission may be required. Exit TV restores the normal controls. Fullscreen must be entered manually after a reload.
 
 ## Validation and limitations
 
@@ -79,5 +79,6 @@ Automated tests cover startup and settings changes without credentials, persiste
 
 The development session could not download npm packages or open network connections. Backend handler tests run locally; GitHub Actions verifies the frontend build and Docker startup. The actual LiveRC feed and browser playback still need verification on the Debian server. LiveRC parsing and legacy Socket.IO polling are retained from the supplied export. Upstream HTML/feed changes can require parser updates. External track requests time out and failed reads surface on the board. LiveRC access is still required; this is not an offline timing system. Audio voices and autoplay behaviour depend on the browser.
 
-The race order uses compact rows and pages sized to the available screen height. Pages advance every 15 seconds; use the arrows to look ahead or Next up to return. Hovering or focusing the list pauses page changes, and manual navigation holds the selected page for 30 seconds. Reduced-motion browsers use manual paging.
+The race order uses compact rows and pages sized to the available screen height. Pages advance every 15 seconds; use the arrows to look ahead or Next up to return. Hovering or focusing the list pauses page changes, and manual navigation holds the selected page for 30 seconds. In TV mode, pages always advance every 15 seconds and loop back to the beginning, even if the pointer rests over the list or a page button has focus. Outside TV mode, reduced-motion browsers use manual paging.
+
 

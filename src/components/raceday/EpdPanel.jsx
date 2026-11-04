@@ -13,7 +13,12 @@ function paceLabel(pace) {
 
 export default function EpdPanel({ epd, live, driverKey, scrollSpeed }) {
   const rows = epd?.rows || [];
-  if (!rows.length) return null;
+  if (!rows.length) return (
+    <section className="epd-panel flex flex-col gap-3 lg:h-full">
+      <h3 className="font-display text-lg uppercase leading-none text-rd-bright">Estimated positions</h3>
+      <p className="rounded-xl border border-rd-border bg-rd-surface2 px-3 py-6 text-center text-xs text-rd-muted">No estimated positions published yet</p>
+    </section>
+  );
   const paceByName = new Map(
     (live?.rows || []).map((r) => [normalizeName(r.name), paceLabel(r.pace)])
   );
@@ -82,3 +87,4 @@ export default function EpdPanel({ epd, live, driverKey, scrollSpeed }) {
     </section>
   );
 }
+

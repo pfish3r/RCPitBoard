@@ -4,7 +4,7 @@ import RaceRow from "@/components/raceday/RaceRow";
 
 const PAGE_SECONDS = 15;
 
-export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingEstimate }) {
+export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingEstimate, tvMode = false }) {
   const viewport = useRef(null);
   const interacting = useRef(false);
   const manualUntil = useRef(0);
@@ -28,17 +28,17 @@ export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingE
     const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasRaces]);
+  }, [hasRaces, tvMode]);
 
-  useEffect(() => { setPage(0); }, [roundLabel, firstSeq, pageSize]);
+  useEffect(() => { setPage(0); }, [roundLabel, firstSeq, pageSize, tvMode]);
 
   useEffect(() => {
-    if (pageCount <= 1 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (pageCount <= 1 || (!tvMode && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
     const timer = setInterval(() => {
-      if (!interacting.current && Date.now() >= manualUntil.current) setPage(value => (value + 1) % pageCount);
+      if (tvMode || (!interacting.current && Date.now() >= manualUntil.current)) setPage(value => (value + 1) % pageCount);
     }, PAGE_SECONDS * 1000);
     return () => clearInterval(timer);
-  }, [pageCount, roundLabel, firstSeq]);
+  }, [pageCount, roundLabel, firstSeq, tvMode]);
 
   const pickPage = value => {
     manualUntil.current = Date.now() + 30000;
@@ -74,7 +74,7 @@ export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingE
             </div>
           </div>
           <nav aria-label="Race order pages" className="flex shrink-0 flex-wrap items-center justify-between gap-2 pt-2 text-xs text-rd-muted">
-            <span>{start + 1}-{Math.min(start + pageSize, timeline.length)} of {timeline.length}</span>
+            <span>{start + 1}-{Math.min(start + pageSize, timeline.length)} of {timeline.length}{tvMode && pageCount > 1 ? " / Auto 15s" : ""}</span>
             <div className="flex items-center gap-1.5">
               {activePage > 0 && <button type="button" onClick={() => pickPage(0)} className="rounded-md border border-rd-border px-2 py-1.5 text-rd-acctext">{isActiveRound ? "Next up" : "First page"}</button>}
               <button type="button" aria-label="Previous races" disabled={activePage === 0} onClick={() => pickPage(activePage - 1)} className="rounded-md border border-rd-border p-1.5 text-rd-bright disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
@@ -91,4 +91,5 @@ export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingE
     </section>
   );
 }
+
 

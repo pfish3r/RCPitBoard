@@ -29,7 +29,7 @@ export default function LiveResults({ live, driverKey, wide, scrollSpeed, tvMode
                 : "bg-rd-surface text-rd-muted"
             }`}
           >
-            {STATUS_LABEL[status] || status}{stale ? " · last known" : ""}
+            {STATUS_LABEL[status] || status}{stale ? " � last known" : ""}
           </span>
         )}
       </div>
@@ -47,7 +47,7 @@ export default function LiveResults({ live, driverKey, wide, scrollSpeed, tvMode
       {rows.length ? (
         <div className="flex min-h-0 min-w-0 flex-col gap-1 overflow-x-auto lg:flex-1 lg:overflow-hidden">
           <div
-            className={`grid min-w-[24rem] ${tvMode ? LIVE_RESULT_GRID_TV : wide ? LIVE_RESULT_GRID_WIDE : LIVE_RESULT_GRID} pb-1 text-[9px] uppercase tracking-[0.1em] text-rd-faint ${
+            className={`grid min-w-0 ${tvMode ? LIVE_RESULT_GRID_TV : wide ? LIVE_RESULT_GRID_WIDE : LIVE_RESULT_GRID} pb-1 text-[9px] uppercase tracking-[0.1em] text-rd-faint ${
               wide ? "gap-1.5 px-2.5" : "gap-1.5 px-1.5"
             }`}
           >
@@ -62,7 +62,7 @@ export default function LiveResults({ live, driverKey, wide, scrollSpeed, tvMode
           <AutoScrollColumn
             speed={scrollSpeed}
             pauseAtTop={10000}
-            className="min-h-0 min-w-[24rem] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-1"
+            className="min-h-0 min-w-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-1"
           >
             <div className="flex flex-col gap-1">
               {rows.map((row) => (

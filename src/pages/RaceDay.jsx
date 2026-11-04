@@ -195,51 +195,43 @@ export default function RaceDay() {
             )}
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
-            <main
-              className={`px-4 pb-4 pt-3 sm:px-6 lg:min-h-0 lg:min-w-0 lg:overflow-hidden ${
-                displayLive ? "lg:w-2/5 lg:shrink-0" : "lg:flex-1"
-              }`}
-            >
+          <div className={`grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:overflow-hidden ${
+            !displayLive ? "lg:grid-cols-1" : showEpd
+              ? "lg:grid-cols-[minmax(0,35fr)_minmax(0,40fr)_minmax(0,25fr)]"
+              : "lg:grid-cols-[minmax(0,35fr)_minmax(0,65fr)]"
+          }`}>
+            <main className="min-w-0 px-4 pb-4 pt-3 lg:min-h-0 lg:overflow-hidden">
               <RaceOrder
                 timeline={visibleTimeline}
                 roundLabel={viewRound?.label}
                 isActiveRound={isActiveRound}
                 timingEstimate={snapshot?.timingEstimate}
-                scrollSpeed={scrollSpeed}
+                tvMode={tvMode}
               />
             </main>
-
             {displayLive && (
-              <aside className="shrink-0 border-t border-rd-border px-4 pb-4 pt-4 sm:px-6 lg:min-h-0 lg:min-w-0 lg:flex-1 lg:overflow-hidden lg:border-l lg:border-t-0">
-                <div
-                  className={`grid gap-4 lg:h-full lg:min-h-0 ${
-                    showEpd
-                      ? tvMode ? "lg:grid-rows-[minmax(0,3fr)_minmax(0,2fr)]" : "lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)]"
-                      : "lg:grid-rows-[minmax(0,1fr)]"
-                  }`}
-                >
-                  <LiveResults
-                    live={snapshot?.live}
-                    driverKey={driverKey}
-                    wide={!showEpd}
-                    tvMode={tvMode}
-                    stale={!health.estimatesAvailable}
-                    scrollSpeed={scrollSpeed}
-                  />
-                  {showEpd && (
-                    <EpdPanel
-                      epd={snapshot?.epd}
-                      live={snapshot?.live}
-                      driverKey={driverKey}
-                      scrollSpeed={scrollSpeed}
-                    />
-                  )}
-                </div>
+              <aside aria-label="Live race results" className="min-w-0 border-t border-rd-border px-4 pb-4 pt-3 lg:min-h-0 lg:overflow-hidden lg:border-l lg:border-t-0">
+                <LiveResults
+                  live={snapshot?.live}
+                  driverKey={driverKey}
+                  wide={!showEpd}
+                  tvMode={tvMode}
+                  stale={!health.estimatesAvailable}
+                  scrollSpeed={scrollSpeed}
+                />
+              </aside>
+            )}
+            {displayLive && showEpd && (
+              <aside aria-label="Estimated positions" className="min-w-0 border-t border-rd-border px-4 pb-4 pt-3 lg:min-h-0 lg:overflow-hidden lg:border-l lg:border-t-0">
+                <EpdPanel
+                  epd={snapshot?.epd}
+                  live={snapshot?.live}
+                  driverKey={driverKey}
+                  scrollSpeed={scrollSpeed}
+                />
               </aside>
             )}
           </div>
-
           {!tvMode && <DriverBar
             drivers={drivers}
             driverKey={driverKey}
@@ -253,4 +245,5 @@ export default function RaceDay() {
     </div>
   );
 }
+
 
