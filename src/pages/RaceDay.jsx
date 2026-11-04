@@ -97,14 +97,14 @@ export default function RaceDay() {
 
   // During the mains/finals the projection feed adds little: drop the panel and
   // give the live timing the full width instead.
-  const showEpd = !tvMode && !isFinalsRound(activeRound?.label);
+  const showEpd = !isFinalsRound(activeRound?.label);
 
   const scrollSpeed = snapshot?.track?.scrollSpeed || DEFAULT_SCROLL_SPEED;
 
   const inViewRound = timeline.some((race) => race.mine);
   const emptyMessage = inViewRound
-    ? `Done in ${viewRound?.label || "this round"} — check the round tabs for your next one.`
-    : `No entry in ${viewRound?.label || "this round"} — check the round tabs above.`;
+    ? `Done in ${viewRound?.label || "this round"} - check the round tabs for your next one.`
+    : `No entry in ${viewRound?.label || "this round"} - check the round tabs above.`;
 
   const pickDriver = (key) => {
     setDriverKey(key);
@@ -215,7 +215,7 @@ export default function RaceDay() {
                 <div
                   className={`grid gap-4 lg:h-full lg:min-h-0 ${
                     showEpd
-                      ? "lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)]"
+                      ? tvMode ? "lg:grid-rows-[minmax(0,3fr)_minmax(0,2fr)]" : "lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)]"
                       : "lg:grid-rows-[minmax(0,1fr)]"
                   }`}
                 >
@@ -253,3 +253,4 @@ export default function RaceDay() {
     </div>
   );
 }
+

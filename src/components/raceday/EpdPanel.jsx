@@ -19,7 +19,7 @@ export default function EpdPanel({ epd, live, driverKey, scrollSpeed }) {
   );
 
   return (
-    <section className="flex flex-col gap-1.5 lg:min-h-0 lg:h-full">
+    <section className="epd-panel flex flex-col gap-1.5 lg:min-h-0 lg:h-full">
       <h3 className="font-display text-lg uppercase leading-none tracking-wide text-rd-bright">
         Estimated positions
       </h3>
@@ -67,7 +67,7 @@ export default function EpdPanel({ epd, live, driverKey, scrollSpeed }) {
                   row.change < 0 ? "text-rd-acctext" : row.change > 0 ? "text-rd-live" : "text-rd-faint"
                 }`}
               >
-                {row.change === 0 ? "–" : `${row.change < 0 ? "▲" : "▼"}${Math.abs(row.change)}`}
+                {row.change === 0 ? "-" : `${row.change < 0 ? "" : ""}${Math.abs(row.change)}`}
               </span>
               <DriverName name={prettyName(row.name)} clashes={clashes} className="text-[11px]" />
               <span className="whitespace-nowrap text-right font-mono text-[10px] text-rd-muted">
