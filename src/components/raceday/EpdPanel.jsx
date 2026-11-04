@@ -1,90 +1,39 @@
 import React from "react";
 import { normalizeName, prettyName } from "@/lib/raceday";
-import DriverName, { clashingShortNames } from "@/components/raceday/DriverName";
 import AutoScrollColumn from "@/components/raceday/AutoScrollColumn";
 
-const EPD_GRID = "grid-cols-[1.25rem_1.5rem_minmax(0,1fr)_auto]";
-
-// Projected laps/time ("28/5:08.095") for drivers on track, from live timing.
 function paceLabel(pace) {
-  const m = String(pace || "").match(/^(\d+)\/(\d+:\d+)/);
-  return m ? `${m[1]}L ${m[2]}` : "";
+  const match = String(pace || "").match(/^(\d+)\s*\/\s*(\d+:\d+)/);
+  return match ? `${match[1]} / ${match[2]}` : "";
 }
 
 export default function EpdPanel({ epd, live, driverKey, scrollSpeed }) {
   const rows = epd?.rows || [];
-  if (!rows.length) return (
-    <section className="epd-panel flex flex-col gap-3 lg:h-full">
-      <h3 className="font-display text-lg uppercase leading-none text-rd-bright">Estimated positions</h3>
-      <p className="rounded-xl border border-rd-border bg-rd-surface2 px-3 py-6 text-center text-xs text-rd-muted">No estimated positions published yet</p>
-    </section>
-  );
-  const paceByName = new Map(
-    (live?.rows || []).map((r) => [normalizeName(r.name), paceLabel(r.pace)])
-  );
-
+  const paceByName = new Map((live?.rows || []).map(row => [normalizeName(row.name), paceLabel(row.pace)]));
   return (
-    <section className="epd-panel flex flex-col gap-1.5 lg:min-h-0 lg:h-full">
-      <h3 className="font-display text-lg uppercase leading-none tracking-wide text-rd-bright">
-        Estimated positions
-      </h3>
-
-      <div className="flex items-baseline justify-between gap-2 text-[9px] uppercase tracking-[0.16em] text-rd-faint">
-        <span className="truncate text-rd-dim">{epd.className || "EPD"}</span>
-        <span className="shrink-0">
-          {epd.numHeats ? `Heat ${epd.heatNum}/${epd.numHeats}` : epd.qualType || ""}
-        </span>
-      </div>
-
-      <div
-        className={`grid ${EPD_GRID} gap-1 px-1.5 pb-0.5 text-[9px] uppercase tracking-[0.16em] text-rd-faint`}
-      >
-        <span>Pos</span>
-        <span>Chg</span>
-        <span>Driver</span>
-        <span className="text-right">Proj.</span>
-      </div>
-
-      <AutoScrollColumn
-        speed={scrollSpeed}
-        pauseAtTop={10000}
-        className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        <div className="flex flex-col gap-0.5">
-        {(() => {
-          const clashes = clashingShortNames(rows.map((r) => prettyName(r.name)));
-          return rows.map((row) => {
-          const mine = Boolean(driverKey) && normalizeName(row.name) === driverKey;
-          return (
-            <div
-              key={`${row.pos}-${row.name}`}
-              className={`grid ${EPD_GRID} items-center gap-1 rounded-md px-1.5 py-1 ${
-                mine
-                  ? "bg-[#c6f24e]/15 text-rd-bright"
-                  : row.inRace
-                    ? "text-rd-dim"
-                    : "text-rd-faint"
-              }`}
-            >
-              <span className="font-mono text-[11px] text-rd-muted">{row.pos}</span>
-              <span
-                className={`text-[10px] ${
-                  row.change < 0 ? "text-rd-acctext" : row.change > 0 ? "text-rd-live" : "text-rd-faint"
-                }`}
-              >
-                {row.change === 0 ? "-" : `${row.change < 0 ? "" : ""}${Math.abs(row.change)}`}
-              </span>
-              <DriverName name={prettyName(row.name)} clashes={clashes} className="text-[11px]" />
-              <span className="whitespace-nowrap text-right font-mono text-[10px] text-rd-muted">
-                {paceByName.get(normalizeName(row.name)) || row.result}
-              </span>
-            </div>
-          );
-          });
-        })()}
-        </div>
-      </AutoScrollColumn>
+    <section className="epd-panel dashboard-positions" aria-labelledby="epd-title">
+      <h2 id="epd-title" className="board-title">Estimated positions</h2>
+      <p className="epd-description">{epd?.className || "Waiting for estimated positions"}{epd?.numHeats ? ` / Heat ${epd.heatNum}/${epd.numHeats}` : epd?.qualType ? ` / ${epd.qualType}` : ""}</p>
+      {rows.length ? <>
+        <div className="epd-grid epd-column-headings"><span>Pos</span><span>Driver</span><span className="text-center">Change</span><span className="text-right">Projected</span></div>
+        <AutoScrollColumn speed={scrollSpeed} pauseAtTop={10000}
+          className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="epd-rows">
+            {rows.map(row => {
+              const mine = Boolean(driverKey) && normalizeName(row.name) === driverKey;
+              const change = Number(row.change) || 0;
+              return <div key={`${row.pos}-${row.name}`} className={`epd-grid epd-row ${mine ? "is-mine" : ""}`}>
+                <span className="font-mono tabular-nums">{row.pos}</span>
+                <span className="epd-driver" title={row.name}>{prettyName(row.name)}</span>
+                <span className={`text-center font-mono ${change < 0 ? "text-rd-acctext" : change > 0 ? "text-rd-live" : "text-rd-muted"}`}>
+                  {change < 0 ? `\u25b2 +${Math.abs(change)}` : change > 0 ? `\u25bc -${change}` : "-"}
+                </span>
+                <span className="text-right font-mono tabular-nums whitespace-nowrap">{paceByName.get(normalizeName(row.name)) || row.result || "-"}</span>
+              </div>;
+            })}
+          </div>
+        </AutoScrollColumn>
+      </> : <p className="rounded-lg border border-rd-border p-4 text-sm text-rd-muted">No estimated positions published for this race yet.</p>}
     </section>
   );
 }
-

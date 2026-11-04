@@ -6,11 +6,9 @@ import {
   LIVE_PANEL_KEY,
   buildTimeline,
   collectDrivers,
-  isFinalsRound,
   nextRaceForDriver,
 } from "@/lib/raceday";
 import { DEFAULT_LIVE_URL, DEFAULT_RESULTS_URL, DEFAULT_SCROLL_SPEED } from "@/lib/trackDefaults";
-import RaceSpotlight from "@/components/raceday/RaceSpotlight";
 import FeedStatus from "@/components/raceday/FeedStatus";
 import useTvMode from "@/hooks/useTvMode";
 import RaceDayHeader from "@/components/raceday/RaceDayHeader";
@@ -95,9 +93,6 @@ export default function RaceDay() {
   });
   useHeatStartChime({ live: snapshot?.live, enabled: health.estimatesAvailable && !paused && audioOn && announcementSettings.heatStartChime });
 
-  // During the mains/finals the projection feed adds little: drop the panel and
-  // give the live timing the full width instead.
-  const showEpd = !isFinalsRound(activeRound?.label);
 
   const scrollSpeed = snapshot?.track?.scrollSpeed || DEFAULT_SCROLL_SPEED;
 
@@ -132,7 +127,7 @@ export default function RaceDay() {
         onToggleFullscreen={toggleFullscreen}
         track={snapshot?.track}
         event={snapshot?.event}
-        current={snapshot?.current}
+        current={displayLive ? null : snapshot?.current}
         liveUrl={snapshot?.track?.liveUrl || DEFAULT_LIVE_URL}
         resultsUrl={snapshot?.track?.resultsUrl || DEFAULT_RESULTS_URL}
         showLive={showLive}
@@ -148,7 +143,6 @@ export default function RaceDay() {
 
       <FeedStatus health={health} />
       {fullscreenError && <p role="status" className="px-6 py-2 text-sm text-rd-muted">{fullscreenError}</p>}
-      {snapshot && <RaceSpotlight current={snapshot.current} timeline={activeTimeline} timing={snapshot.timing} now={now} health={health} paused={paused} estimate={snapshot.timingEstimate} />}
 
       {paused && (
         <div role="status" className="flex shrink-0 items-center justify-center gap-2 border-y border-rd-border bg-rd-surface px-4 py-3 text-sm font-semibold text-rd-acctext">
@@ -183,52 +177,31 @@ export default function RaceDay() {
         </main>
       ) : (
         <>
-          <div className={`${tvMode ? "hidden" : ""} shrink-0 px-4 pt-2 sm:px-6`}>
-            <RoundTabs
-              rounds={rounds}
-              activeRoundId={snapshot?.activeRoundId}
-              value={viewRound?.id}
-              onChange={setViewRoundId}
-            />
-            {error && (
-              <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-rd-live">Showing last good data</p>
-            )}
-          </div>
-
-          <div className={`grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:overflow-hidden ${
-            !displayLive ? "lg:grid-cols-1" : showEpd
-              ? "lg:grid-cols-[minmax(0,35fr)_minmax(0,40fr)_minmax(0,25fr)]"
-              : "lg:grid-cols-[minmax(0,35fr)_minmax(0,65fr)]"
-          }`}>
-            <main className="min-w-0 px-4 pb-4 pt-3 lg:min-h-0 lg:overflow-hidden">
-              <RaceOrder
-                timeline={visibleTimeline}
-                roundLabel={viewRound?.label}
-                isActiveRound={isActiveRound}
-                timingEstimate={snapshot?.timingEstimate}
-                tvMode={tvMode}
-              />
-            </main>
+          <div className={`dashboard-layout ${displayLive ? "dashboard-with-live" : "dashboard-order-only"}`}>
             {displayLive && (
-              <aside aria-label="Live race results" className="min-w-0 border-t border-rd-border px-4 pb-4 pt-3 lg:min-h-0 lg:overflow-hidden lg:border-l lg:border-t-0">
+              <div className="dashboard-live board-panel">
                 <LiveResults
                   live={snapshot?.live}
                   driverKey={driverKey}
-                  wide={!showEpd}
-                  tvMode={tvMode}
-                  stale={!health.estimatesAvailable}
-                  scrollSpeed={scrollSpeed}
+                  stale={!health.estimatesAvailable && !paused}
+                  paused={paused}
+                  remainingSeconds={typeof snapshot?.current?.remainingSeconds === "number" && Number.isFinite(snapshot?.timing?.at)
+                    ? Math.max(0, Math.ceil((snapshot.timing.at - now) / 1000)) : null}
                 />
-              </aside>
+              </div>
             )}
-            {displayLive && showEpd && (
-              <aside aria-label="Estimated positions" className="min-w-0 border-t border-rd-border px-4 pb-4 pt-3 lg:min-h-0 lg:overflow-hidden lg:border-l lg:border-t-0">
-                <EpdPanel
-                  epd={snapshot?.epd}
-                  live={snapshot?.live}
-                  driverKey={driverKey}
-                  scrollSpeed={scrollSpeed}
-                />
+            <main className="dashboard-order board-panel">
+              {!tvMode && <div className="mb-2 shrink-0">
+                <RoundTabs rounds={rounds} activeRoundId={snapshot?.activeRoundId} value={viewRound?.id} onChange={setViewRoundId} />
+              </div>}
+              <div className="min-h-0 flex-1">
+                <RaceOrder timeline={visibleTimeline} roundLabel={viewRound?.label} isActiveRound={isActiveRound}
+                  timingEstimate={snapshot?.timingEstimate} tvMode={tvMode} />
+              </div>
+            </main>
+            {displayLive && (
+              <aside aria-label="Estimated positions" className="dashboard-epd board-panel">
+                <EpdPanel epd={snapshot?.epd} live={snapshot?.live} driverKey={driverKey} scrollSpeed={scrollSpeed} />
               </aside>
             )}
           </div>

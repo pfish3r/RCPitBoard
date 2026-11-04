@@ -204,7 +204,7 @@ function socketPackets(text) {
   return packets;
 }
 
-function buildLive({ race, clock, drivers }) {
+export function buildLive({ race, clock, drivers }) {
   if (!race && !drivers) return null;
   const fields = race ? String(race).split("|") : [];
   const rawName = fields[0] || "";
@@ -234,7 +234,7 @@ function buildLive({ race, clock, drivers }) {
         name,
         laps: parts[3] || "",
         lapTime: parts[4] || "",
-        fastLap: parts[7] && parts[7] !== "0" ? secondsToClock(parts[7]) : "",
+        fastLap: Number(parts[7]) > 0 && Number.isFinite(Number(parts[7])) ? Number(parts[7]).toFixed(3) : "",
         difference: parts[16] && parts[16] !== "0" ? parts[16] : "",
         pace: parts[6] || "",
         elapsed: parts[5] || "",

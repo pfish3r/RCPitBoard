@@ -65,13 +65,13 @@ For frontend development run npm start and npm run dev in separate terminals. Vi
 
 ## Race display and TV mode
 
-The **On track** and **Next up** panels show the current class, heat and estimated countdown above the race order. Start times are estimates, not an official timetable. An estimate more than a minute overdue is labelled as running behind.
+One shared **Live results** panel shows positions 1-5 and 6-10 side by side, with full driver names, last lap, fastest lap and predicted laps / total race time. The top ten stay visible without scrolling; larger fields are labelled as top-ten only. Race order is beneath on the left, with estimated starts and countdowns; estimated positions are beneath on the right. Both themes use the same layout. Start times are estimates, not an official timetable. An estimate more than a minute overdue is labelled as running behind.
 
 The server learns the median turnaround from up to nine adjacent race transitions in the same meeting, combining it with each published race length. Until it has a usable sample it uses a two-minute gap. Pauses, skipped heats, extended outages and gaps over ten minutes are excluded. Samples are shared by every screen, saved in the data volume, and reset when the track or meeting changes. Polling and LiveRC clock accuracy limit the precision.
 
 The feed status shows when live timing was last received. A failed live feed, incomplete race order, stale response or a racing clock that stops advancing suspends countdown estimates and mutes announcements. Last known race data remains labelled until timing recovers. A stationary feed while staging or finished is normal and does not trigger the racing-clock warning. Intentional admin pause still freezes the display.
 
-Use **TV mode** in the header for larger race cards and live results, fewer controls, and the active round. On desktop, race order, live results and estimated positions appear in three columns (35% / 40% / 25%), including TV mode. Smaller screens stack the panels vertically. Finals continue to use the full results panel. The mode is remembered on that browser and can also be opened with `/?tv=1`. Use the adjacent fullscreen button to fill the display; browser permission may be required. Exit TV restores the normal controls. Fullscreen must be entered manually after a reload.
+Use **TV mode** in the header for larger race cards and live results, fewer controls, and the active round. The shared live-results panel spans the top of the desktop display, with two equal panels below for race order and estimated positions. Smaller screens stack the panels vertically. If no projections are published, estimated positions shows a waiting message. The mode is remembered on that browser and can also be opened with `/?tv=1`. Use the adjacent fullscreen button to fill the display; browser permission may be required. Exit TV restores the normal controls. Fullscreen must be entered manually after a reload.
 
 ## Validation and limitations
 

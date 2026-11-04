@@ -53,7 +53,7 @@ export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingE
       onFocusCapture={() => { interacting.current = true; }}
       onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) interacting.current = false; }}>
       <div className="mb-2 flex shrink-0 items-baseline justify-between gap-3">
-        <h2 className="font-display text-2xl uppercase leading-none text-rd-bright">Race order</h2>
+        <h2 className="board-title">Race order</h2>
         <span className="text-xs text-rd-muted">{timeline.length} {isActiveRound ? "remaining" : "races"}</span>
       </div>
       <p className="mb-2 shrink-0 truncate text-xs text-rd-muted" title={roundLabel}>
