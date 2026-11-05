@@ -292,3 +292,17 @@
 @media (max-width: 1023px) {
   .pitboard-header .pitboard-brand .pitboard-event { border-left: 0; padding-left: 0; }
 }
+
+/* Whole projection rows and a result column wide enough for millisecond timing. */
+.dashboard-positions { --epd-row-height: 56px; }
+.epd-grid { grid-template-columns: 3ch minmax(0, 1fr) 5ch minmax(0, 14rem); }
+.epd-row { height: var(--epd-row-height); box-sizing: border-box; }
+.epd-projection { min-width: 0; line-height: 1.15; }
+.epd-projection-time { display: block; overflow-wrap: anywhere; }
+.epd-projection-note { display: block; margin-top: 0.15rem; font-size: 0.7em; overflow-wrap: anywhere; color: var(--rd-muted); }
+@media (max-width: 1023px) {
+  .epd-page-viewport { height: min(45vh, 24rem); flex: none; }
+}
+@media (max-width: 420px) {
+  .epd-grid { grid-template-columns: 3ch minmax(0, 1fr) 3.5ch minmax(0, 10rem); gap: 0.3rem; }
+}

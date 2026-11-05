@@ -105,3 +105,5 @@ The development session could not download npm packages or open network connecti
 The race order uses compact rows and pages sized to the available screen height. Pages advance every 15 seconds; use the arrows to look ahead or Next up to return. Hovering or focusing the list pauses page changes, and manual navigation holds the selected page for 30 seconds. In TV mode, pages always advance every 15 seconds and loop back to the beginning, even if the pointer rests over the list or a page button has focus. Outside TV mode, reduced-motion browsers use manual paging.
 
 
+
+Estimated positions uses whole pages that advance every 10 seconds, with manual arrows, so the first and last rows remain fully visible. Projected lap/time values retain milliseconds; notes such as DNF appear below the time in a wider column. Existing text sizes are retained.
