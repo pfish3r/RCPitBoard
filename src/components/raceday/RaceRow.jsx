@@ -15,11 +15,10 @@ export default function RaceRow({ race, isActiveRound }) {
   return <article role="listitem" className={`race-card ${onNow ? "is-running" : ""} ${next ? "is-next" : ""} ${race.mine ? "is-mine" : ""} ${done ? "is-complete" : ""}`}>
     <div className="race-card-number"><strong>{race.num}</strong><span>{onNow ? "On track" : next ? "Next up" : race.mine ? "You" : ""}</span></div>
     <div className="race-card-body">
-      <h3 className="race-card-class" title={race.className}>{race.className}</h3>
+      <div className="race-card-title"><h3 className="race-card-class" title={race.className}>{race.className}</h3><span className="race-card-heat">Heat {heat}</span></div>
       <dl className="race-card-details">
-        <div><dt>Heat</dt><dd>{heat}</dd></div>
-        <div><dt>Est. start</dt><dd className="race-card-start">{start}</dd></div>
-        <div><dt>In</dt><dd className="race-card-countdown">{done ? "-" : countdown}</dd></div>
+        <div><dt>Est. start</dt><dd className={`race-card-start ${done || onNow || !hasEta || race.overdue ? "is-status" : ""}`}>{start}</dd></div>
+        <div><dt>Starts in</dt><dd className={`race-card-countdown ${onNow || race.overdue ? "is-status" : ""}`}>{done ? "-" : countdown}</dd></div>
       </dl>
     </div>
   </article>;
