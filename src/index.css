@@ -190,8 +190,8 @@
 }
 @media (min-width: 1024px) {
   .dashboard-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0.75rem 1rem; }
-  .dashboard-with-live { grid-template-rows: minmax(250px, 0.8fr) minmax(260px, 1.2fr); }
-  .dashboard-live { grid-column: 1 / -1; }
+  .dashboard-with-live { grid-template-rows: minmax(max-content, 0.8fr) minmax(260px, 1.2fr); }
+  .dashboard-live { grid-column: 1 / -1; display: grid; }
   .dashboard-order-only .dashboard-order { grid-column: 1 / -1; }
   .dashboard-order .race-order-viewport { min-height: 0; }
   .dashboard-epd { overflow: hidden; }
@@ -336,3 +336,9 @@ body { font-size: 1rem; }
 .light .timing-card.is-mine { box-shadow: inset 0 0 0 2px #416a00; }
 .light .broadcast-live .live-race-clock { background: #edf1e6; color: #416a00; }
 .light .broadcast-live .unified-live-heading { border-bottom-color: #929d00; }
+
+/* Reserve both complete timing rows before allocating the lower panels. */
+@media (min-width: 1024px) {
+  .broadcast-live { display: grid; height: auto; grid-template-rows: auto minmax(290px, 1fr) auto; }
+}
+.broadcast-live .unified-live-heading { flex-shrink: 0; }
