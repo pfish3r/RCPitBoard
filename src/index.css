@@ -319,3 +319,20 @@ body { font-size: 1rem; }
   .dashboard-order .race-order-row .race-start-time { font-size: 1.8rem; }
   .dashboard-order .race-order-row .race-start-countdown { font-size: 1.2rem; }
 }
+
+/* Live timing follows the board theme, including its heading and clock. */
+.broadcast-live .unified-live-heading { background: var(--rd-soft); color: var(--rd-bright); }
+.broadcast-live .board-title, .broadcast-live .live-race-description { color: var(--rd-bright); }
+.broadcast-live .live-race-description { border-color: var(--rd-border-strong); }
+.broadcast-live .live-race-clock > span:last-child,
+.broadcast-live .live-results-note { color: var(--rd-dim); }
+.light .dashboard-live.board-panel { background: var(--rd-panel); border-color: #929d00; }
+.light .broadcast-live { color: var(--rd-bright); }
+.light .timing-card { background: repeating-linear-gradient(130deg, #fff 0, #fff 5px, #f2f4f6 5px, #f2f4f6 9px); border-right-color: #bac1c8; border-bottom-color: #929d00; }
+.light .timing-card-rank { background: linear-gradient(#e4e8ec, #f7f8fa); border-right-color: #bac1c8; color: #10161d; }
+.light .timing-card.is-leader .timing-card-rank { background: linear-gradient(#ed2939, #b30e1b); color: #fff; }
+.light .timing-card-name, .light .timing-card-stat-line dt { color: #10161d; }
+.light .timing-card-stat-line dd { color: #416a00; }
+.light .timing-card.is-mine { box-shadow: inset 0 0 0 2px #416a00; }
+.light .broadcast-live .live-race-clock { background: #edf1e6; color: #416a00; }
+.light .broadcast-live .unified-live-heading { border-bottom-color: #929d00; }
