@@ -16,7 +16,7 @@ export default function LiveResultRow({ row, position, mine }) {
           </div>
           <div className="timing-card-stat-line timing-card-pace-line">
             <div><dt>Laps</dt><dd>{row?.laps ?? "-"}</dd></div>
-            <div title="Predicted laps / total race time"><dt>Pred</dt><dd>{predictedFinish(row?.pace).replace(/\s+/g, "")}</dd></div>
+            <div title="Predicted laps / total race time"><dt>Pace</dt><dd>{predictedFinish(row?.pace).replace(/\s+/g, "")}</dd></div>
           </div>
         </dl>
       </div>

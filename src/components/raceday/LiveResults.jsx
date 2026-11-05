@@ -29,7 +29,7 @@ export default function LiveResults({ live, driverKey, stale, paused, remainingS
         {groups.flat().map(({ position, row }) => <LiveResultRow key={position} position={position} row={row}
           mine={Boolean(driverKey && row) && normalizeName(row.name) === driverKey} />)}
       </div>
-      <p className="live-results-note">{rows.length > 10 ? `Showing top 10 of ${rows.length} drivers / ` : !rows.length ? "Waiting for drivers / " : ""}Pred. finish = laps / total race time</p>
+      <p className="live-results-note">{rows.length > 10 ? `Showing top 10 of ${rows.length} drivers / ` : !rows.length ? "Waiting for drivers / " : ""}Pace = predicted laps / total race time</p>
     </section>
   );
 }
