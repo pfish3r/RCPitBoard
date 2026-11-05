@@ -306,3 +306,16 @@
 @media (max-width: 420px) {
   .epd-grid { grid-template-columns: 3ch minmax(0, 1fr) 3.5ch minmax(0, 10rem); gap: 0.3rem; }
 }
+
+/* Text defaults to 80%; box sizes and spacing retain their current scale. */
+:root { --rd-font-scale: 0.8; }
+body { font-size: 1rem; }
+.race-order { --race-order-row-height: 56px; }
+.race-order-grid { grid-template-columns: 2.5rem minmax(0, 1fr) 3.25rem 7.5rem; }
+.dashboard-order .race-order-row .race-start-time { font-size: 2.1rem; }
+.dashboard-order .race-order-row .race-start-countdown { font-size: 1.4rem; }
+@media (max-width: 420px) {
+  .race-order-grid { grid-template-columns: 2rem minmax(0, 1fr) 2.5rem 6.25rem; }
+  .dashboard-order .race-order-row .race-start-time { font-size: 1.8rem; }
+  .dashboard-order .race-order-row .race-start-countdown { font-size: 1.2rem; }
+}

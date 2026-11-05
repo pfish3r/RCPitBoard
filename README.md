@@ -107,3 +107,5 @@ The race order uses compact rows and pages sized to the available screen height.
 
 
 Estimated positions uses whole pages that advance every 10 seconds, with manual arrows, so the first and last rows remain fully visible. Projected lap/time values retain milliseconds; notes such as DNF appear below the time in a wider column. Existing text sizes are retained.
+
+Default text is rendered at 80% of the previous font sizes, without scaling panel spacing or controls. Race-order start times and countdowns use larger base sizes so they remain more prominent after that reduction.
