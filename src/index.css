@@ -414,3 +414,34 @@ body { font-size: 1rem; }
 }
 
 .race-card-grid { min-height: calc(var(--race-card-rows, 2) * 150px); }
+
+/* Split the viewport explicitly so card intrinsic heights cannot starve results. */
+@media (min-width: 1024px) {
+  .dashboard-with-live { grid-template-rows: minmax(0, 44fr) minmax(0, 56fr); }
+  .dashboard-order > .flex-1 { display: flex; flex-direction: column; }
+  .race-order-cards { flex: 1; height: auto; }
+  .race-card-grid { min-height: 0; grid-template-rows: repeat(var(--race-card-rows, 2), minmax(0, 1fr)); }
+  .dashboard-with-live .dashboard-live, .dashboard-with-live .dashboard-epd { display: flex; flex-direction: column; }
+  .live-table-panel, .dashboard-positions { flex: 1; height: auto; }
+}
+.race-card { container-type: inline-size; }
+.race-card-body { justify-content: space-between; gap: 0.35rem; }
+.race-card-class { font-size: clamp(1.1rem, 6.5cqw, 1.75rem); }
+.race-card-details dt { font-size: clamp(0.85rem, 4.5cqw, 1.1rem); }
+.race-card-details dd { font-size: clamp(1.5rem, 8cqw, 2.1rem); }
+.race-card-number strong { font-size: clamp(2.5rem, 20cqw, 5rem); }
+.live-table-panel { --live-columns: 2rem minmax(0, 1fr) 4rem 4rem 2.7rem 8rem; }
+.live-table-grid { grid-template-columns: var(--live-columns); gap: 0.55rem; }
+.live-table-columns { font-family: var(--font-body); font-size: 0.85rem; }
+.live-table-columns > span:nth-child(n+3) { text-align: right; }
+@media (min-width: 1024px) and (max-height: 700px) {
+  .dashboard-with-live { grid-template-rows: 330px 350px; }
+}
+@media (max-width: 1200px) {
+  .live-table-panel { --live-columns: 1.5rem minmax(0, 1fr) 3.4rem 3.4rem 2.3rem 6.8rem; }
+  .live-table-grid { gap: 0.3rem; }
+}
+@media (max-width: 540px) {
+  .live-table-panel { --live-columns: 1.2rem minmax(0, 1fr) 3rem 3rem 2rem 6rem; }
+  .live-table-columns { font-size: 0.75rem; }
+}
