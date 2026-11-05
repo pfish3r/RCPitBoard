@@ -7,6 +7,7 @@ import {
   buildTimeline,
   collectDrivers,
   nextRaceForDriver,
+  isFinalsRound,
 } from "@/lib/raceday";
 import { DEFAULT_LIVE_URL, DEFAULT_RESULTS_URL, DEFAULT_SCROLL_SPEED } from "@/lib/trackDefaults";
 import FeedStatus from "@/components/raceday/FeedStatus";
@@ -94,6 +95,7 @@ export default function RaceDay() {
   useHeatStartChime({ live: snapshot?.live, enabled: health.estimatesAvailable && !paused && audioOn && announcementSettings.heatStartChime });
 
 
+  const doubleRaceOrder = displayLive && isFinalsRound(activeRound?.label);
   const scrollSpeed = snapshot?.track?.scrollSpeed || DEFAULT_SCROLL_SPEED;
 
   const inViewRound = timeline.some((race) => race.mine);
@@ -190,16 +192,16 @@ export default function RaceDay() {
                 />
               </div>
             )}
-            <main className="dashboard-order board-panel">
+            <main className={`dashboard-order board-panel ${doubleRaceOrder ? "finals-order" : ""}`}>
               {!tvMode && <div className="mb-2 shrink-0">
                 <RoundTabs rounds={rounds} activeRoundId={snapshot?.activeRoundId} value={viewRound?.id} onChange={setViewRoundId} />
               </div>}
               <div className="min-h-0 flex-1">
                 <RaceOrder timeline={visibleTimeline} roundLabel={viewRound?.label} isActiveRound={isActiveRound}
-                  timingEstimate={snapshot?.timingEstimate} tvMode={tvMode} />
+                  timingEstimate={snapshot?.timingEstimate} tvMode={tvMode} columns={doubleRaceOrder ? 2 : 1} />
               </div>
             </main>
-            {displayLive && (
+            {displayLive && !doubleRaceOrder && (
               <aside aria-label="Estimated positions" className="dashboard-epd board-panel">
                 <EpdPanel epd={snapshot?.epd} live={snapshot?.live} driverKey={driverKey} scrollSpeed={scrollSpeed} />
               </aside>
