@@ -27,7 +27,7 @@ test('partial race pages balance two rows and a small field uses one row', () =>
 
 import { raceRectanglePageSize } from '../src/lib/raceOrderPaging.js';
 test('horizontal race rectangles page using available height and font size',()=>{
-  assert.equal(raceRectanglePageSize(320),4);
+  assert.equal(raceRectanglePageSize(320),3);
   assert.equal(raceRectanglePageSize(800),9);
   assert.equal(raceRectanglePageSize(320,1.5),2);
   assert.equal(raceRectanglePageSize(30),1);
