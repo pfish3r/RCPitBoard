@@ -4,6 +4,7 @@ import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { createApp, validateSettings } from '../server/index.js';
+import { DEFAULT_DISPLAY } from '../shared/displayLayout.js';
 import { parseHeatSheet, parseResultsIndex } from '../server/liverc.js';
 
 const settings = { live_url: 'https://lprcoffroad.liverc.com/live/', results_url: 'https://lprcoffroad.liverc.com/results/', scroll_speed: 16, refresh_seconds: 20 };
@@ -50,17 +51,22 @@ test('settings work without credentials and preserve validation, persistence and
     assert.equal((await fetch(base + '/api/auth/login', { method: 'POST', headers, body: '{}' })).status, 404);
     assert.equal((await fetch(base + '/api/settings', { method: 'PUT', body: JSON.stringify(settings) })).status, 403);
     assert.equal((await fetch(base + '/api/settings', { method: 'PUT', headers, body: JSON.stringify({ ...settings, live_url: 'http://127.0.0.1/' }) })).status, 400);
-    const changed = { ...settings, scroll_speed: 30 };
+    const changed = { ...settings, scroll_speed: 30, display: { ...DEFAULT_DISPLAY, preset: "left", primary: 40, fonts: { order: 110, live: 125, epd: 90 } } };
     const saved = await fetch(base + '/api/settings', { method: 'PUT', headers, body: JSON.stringify(changed) });
     assert.equal(saved.status, 200);
     assert.equal(saved.headers.get('set-cookie'), null);
-    assert.equal((await saved.json()).scroll_speed, 30);
+    const savedSettings = await saved.json();
+    assert.equal(savedSettings.scroll_speed, 30);
+    assert.deepEqual(savedSettings.display, changed.display);
     const responses = await Promise.all(Array.from({ length: 5 }, () => fetch(base + '/api/snapshot')));
     assert.ok(responses.every(r => r.status === 200)); assert.equal(calls, 1);
+    assert.deepEqual((await responses[0].json()).display, changed.display);
     await close();
     // Old installations can keep obsolete or blank credentials in their .env.
     server = await createApp({ ...options, env: { ADMIN_EMAIL: '', ADMIN_PASSWORD: '' } }); await listen();
-    assert.equal((await (await fetch(base + '/api/settings')).json()).scroll_speed, 30);
+    assert.deepEqual((await (await fetch(base + '/api/settings')).json()).display, changed.display);
+    await fetch(base + '/api/settings', { method: 'PUT', headers, body: JSON.stringify(settings) });
+    assert.deepEqual((await (await fetch(base + '/api/settings')).json()).display, changed.display);
     assert.equal((await fetch(base + '/api/settings', { method: 'PUT', headers, body: JSON.stringify(changed) })).status, 200);
   } finally { await close(); await rm(directory, { recursive: true, force: true }); }
 });
@@ -103,6 +109,10 @@ test('shared pause freezes the feed, survives restart, and resumes with fresh da
       assert.equal(frozen.data.current.seq, 1);
       assert.equal(frozen.data.board.pausedAt, pause.data.pausedAt);
     }
+    assert.equal(calls, 1);
+    const display = { ...DEFAULT_DISPLAY, preset: "rows", primary: 35 };
+    assert.equal((await request("settings", "PUT", { ...settings, display })).status, 200);
+    assert.deepEqual((await request("snapshot")).data.display, display);
     assert.equal(calls, 1);
     server = await createApp(options);
     assert.equal((await request('snapshot')).data.current.seq, 1);

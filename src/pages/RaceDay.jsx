@@ -10,6 +10,8 @@ import {
   isFinalsRound,
 } from "@/lib/raceday";
 import { DEFAULT_LIVE_URL, DEFAULT_RESULTS_URL, DEFAULT_SCROLL_SPEED } from "@/lib/trackDefaults";
+import useDisplayRotation from "@/hooks/useDisplayRotation";
+import { DEFAULT_DISPLAY, displayGrid, panelTypography, nextDisplayPanel } from "@/lib/displayLayout";
 import FeedStatus from "@/components/raceday/FeedStatus";
 import useTvMode from "@/hooks/useTvMode";
 import RaceDayHeader from "@/components/raceday/RaceDayHeader";
@@ -28,7 +30,10 @@ export default function RaceDay() {
   const [viewRoundId, setViewRoundId] = useState(null);
   const [showLive, setShowLive] = useState(() => localStorage.getItem(LIVE_PANEL_KEY) !== "off");
 
-  const displayLive = tvMode || showLive;
+  const display = snapshot?.display || DEFAULT_DISPLAY;
+  const rotating = display.preset === "rotate";
+  const rotation = useDisplayRotation(rotating, display.durations);
+  const displayLive = tvMode || showLive || rotating;
   const paused = Boolean(snapshot?.board?.paused);
   const estimatesAvailable = health.estimatesAvailable || paused;
   const rounds = snapshot?.rounds || [];
@@ -95,7 +100,7 @@ export default function RaceDay() {
   useHeatStartChime({ live: snapshot?.live, enabled: health.estimatesAvailable && !paused && audioOn && announcementSettings.heatStartChime });
 
 
-  const finalsLayout = displayLive && isFinalsRound(activeRound?.label);
+  const finalsLayout = displayLive && !rotating && display.finalsExpand && isFinalsRound(activeRound?.label);
   const scrollSpeed = snapshot?.track?.scrollSpeed || DEFAULT_SCROLL_SPEED;
 
   const inViewRound = timeline.some((race) => race.mine);
@@ -181,8 +186,9 @@ export default function RaceDay() {
         </main>
       ) : (
         <>
-          <div className={`dashboard-layout ${displayLive ? `dashboard-with-live ${finalsLayout ? "dashboard-finals" : ""}` : "dashboard-order-only"}`}>
-            <main className="dashboard-order board-panel">
+          {rotating && <div className="rotation-toolbar"><span>{({live:"Live results",epd:"Estimated positions",order:"Race order"})[rotation.panel]} / Next: {({live:"Live results",epd:"Estimated positions",order:"Race order"})[nextDisplayPanel(rotation.panel)]} in {rotation.remaining}s</span><button type="button" onClick={rotation.advance}>Next screen</button></div>}
+          <div style={displayLive ? { ...displayGrid(display, finalsLayout), ...(rotating ? { gridTemplateAreas: '\"' + rotation.panel + '\"' } : {}) } : undefined} className={`dashboard-layout ${displayLive ? `dashboard-with-live dashboard-configured ${rotating ? "dashboard-rotating" : ""} ${finalsLayout ? "dashboard-finals" : ""}` : "dashboard-order-only"}`}>
+            {(!rotating || rotation.panel === "order") && <main style={panelTypography(display, "order")} className="dashboard-order board-panel">
               {!tvMode && <div className="mb-2 shrink-0">
                 <RoundTabs rounds={rounds} activeRoundId={snapshot?.activeRoundId} value={viewRound?.id} onChange={setViewRoundId} />
               </div>}
@@ -190,9 +196,9 @@ export default function RaceDay() {
                 <RaceOrder timeline={visibleTimeline} roundLabel={viewRound?.label} isActiveRound={isActiveRound}
                   timingEstimate={snapshot?.timingEstimate} tvMode={tvMode} />
               </div>
-            </main>
-            {displayLive && (
-              <div className="dashboard-live board-panel">
+            </main>}
+            {displayLive && (!rotating || rotation.panel === "live") && (
+              <div style={panelTypography(display, "live")} className="dashboard-live board-panel">
                 <LiveResults
                   tvMode={tvMode}
                   live={snapshot?.live}
@@ -204,8 +210,8 @@ export default function RaceDay() {
                 />
               </div>
             )}
-            {displayLive && !finalsLayout && (
-              <aside aria-label="Estimated positions" className="dashboard-epd board-panel">
+            {displayLive && !finalsLayout && (!rotating || rotation.panel === "epd") && (
+              <aside style={panelTypography(display, "epd")} aria-label="Estimated positions" className="dashboard-epd board-panel">
                 <EpdPanel epd={snapshot?.epd} live={snapshot?.live} driverKey={driverKey} scrollSpeed={scrollSpeed} />
               </aside>
             )}

@@ -10,6 +10,7 @@ ENV NODE_ENV=production PORT=3000 DATA_DIR=/app/data
 WORKDIR /app
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/server ./server
+COPY --from=build --chown=node:node /app/shared ./shared
 COPY --from=build --chown=node:node /app/package.json ./package.json
 RUN mkdir /app/data && chown node:node /app/data
 USER node

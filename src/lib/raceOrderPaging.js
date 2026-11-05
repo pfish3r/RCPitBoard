@@ -14,8 +14,14 @@ export function raceCardPageSize(width) {
   return width >= 1000 ? 10 : width >= 600 ? 6 : width >= 380 ? 4 : 2;
 }
 
-export function raceCardRows(races, pageSize) {
-  const columns = Math.max(1, Math.floor(pageSize / 2));
+export function raceCardRows(races, pageSize, maxColumns = pageSize / 2) {
+  const columns = Math.max(1, Math.floor(maxColumns));
   const split = races.length <= columns ? races.length : Math.ceil(races.length / 2);
   return races.length > split ? [races.slice(0, split), races.slice(split)] : [races];
+}
+
+export function raceCardGeometry(width, height, font = 1) {
+  const columns = raceCardPageSize(width / font) / 2;
+  const rowCount = height >= 250 * Math.max(1, font) ? 2 : 1;
+  return { columns, pageSize: columns * rowCount };
 }

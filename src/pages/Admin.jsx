@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2, Check, Pause, Play } from "lucide-react";
 import { api } from "@/api/client";
+import DisplaySettings from "@/components/admin/DisplaySettings";
+import { DEFAULT_DISPLAY } from "@/lib/displayLayout";
 import RefreshRateField from "@/components/admin/RefreshRateField";
 import {
   DEFAULT_LIVE_URL,
@@ -13,6 +15,7 @@ import {
 } from "@/lib/trackDefaults";
 
 export default function Admin() {
+  const [display, setDisplay] = useState(() => structuredClone(DEFAULT_DISPLAY));
   const [board, setBoard] = useState(null);
   const [pausing, setPausing] = useState(false);
   const [pauseError, setPauseError] = useState("");
@@ -33,6 +36,7 @@ export default function Admin() {
         const page = await api.entities.TrackSettings.filter();
         if (!active) return;
         const settings = page?.items?.[0] || null;
+        setDisplay(settings?.display || structuredClone(DEFAULT_DISPLAY));
         setRecordId(settings?.id || null);
         setLiveUrl(settings?.live_url || DEFAULT_LIVE_URL);
         setResultsUrl(settings?.results_url || DEFAULT_RESULTS_URL);
@@ -73,6 +77,7 @@ export default function Admin() {
     setSaved(false);
     setError("");
     const payload = {
+      display,
       live_url: liveUrl.trim(),
       results_url: resultsUrl.trim(),
       scroll_speed: scrollSpeed,
@@ -95,7 +100,7 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-rd-bg font-body text-rd-text">
-      <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 lg:py-12">
+      <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-rd-muted transition hover:text-rd-bright"
@@ -134,6 +139,7 @@ export default function Admin() {
           </div>
         ) : (
           <form onSubmit={save} className="mt-8 space-y-6">
+            <DisplaySettings value={display} onChange={value => { setDisplay(value); setSaved(false); }} />
 
             <label className="block">
               <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rd-muted">
@@ -200,7 +206,7 @@ export default function Admin() {
               </p>
             )}
 
-            <div className="flex items-center gap-3">
+            <div className="sticky bottom-0 z-10 flex items-center gap-3 rounded-xl border border-rd-border bg-rd-panel p-3">
               <button
                 type="submit"
                 disabled={saving}

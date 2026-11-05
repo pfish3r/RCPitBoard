@@ -4,11 +4,12 @@ import { resolve, extname, dirname, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { randomBytes } from 'node:crypto';
 import snapshot from './snapshot.js';
+import { DEFAULT_DISPLAY, validateDisplay } from '../shared/displayLayout.js';
 import { observeRaceTiming, raceEstimate } from './race-estimates.js';
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const defaults = { id: 'track', live_url: 'https://lprcoffroad.liverc.com/live/',
-  results_url: 'https://lprcoffroad.liverc.com/results/', scroll_speed: 16, refresh_seconds: 20 };
+  results_url: 'https://lprcoffroad.liverc.com/results/', scroll_speed: 16, refresh_seconds: 20, display: DEFAULT_DISPLAY };
 const fail = (status, message) => Object.assign(new Error(message), { status });
 
 export function validateSettings(data) {
@@ -26,6 +27,7 @@ export function validateSettings(data) {
     if (!Number.isInteger(n) || n < min || n > max) throw fail(400, `${key} must be between ${min} and ${max}`);
     value[key] = n;
   }
+  try { value.display = validateDisplay(data.display); } catch (error) { throw fail(400, error.message); }
   return value;
 }
 
@@ -55,7 +57,7 @@ export async function createApp(options = {}) {
     const { snapshot: _snapshot, ...status } = board;
     return status;
   };
-  const boardSnapshot = data => ({ ...(data || {}), board: boardStatus() });
+  const boardSnapshot = data => ({ ...(data || {}), board: boardStatus(), display: settings.display });
   function setPaused(paused) {
     const task = controlQueue.then(async () => {
       if (board.paused === paused) return;
@@ -113,7 +115,8 @@ export async function createApp(options = {}) {
         }
         if (req.method === 'GET' && path === '/api/settings') return json(res, 200, settings);
         if (req.method === 'PUT' && path === '/api/settings') {
-          const next = validateSettings(await body(req));
+          const payload = await body(req);
+          const next = validateSettings({ ...payload, display: payload.display ?? settings.display });
           const tmp = `${file}.${randomBytes(8).toString('hex')}.tmp`;
           await writeFile(tmp, JSON.stringify(next, null, 2), { mode: 0o600 });
           await rename(tmp, file);

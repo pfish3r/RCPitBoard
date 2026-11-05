@@ -109,3 +109,9 @@ The race order uses compact rows and pages sized to the available screen height.
 Estimated positions uses whole pages that advance every 10 seconds, with manual arrows, so the first and last rows remain fully visible. Projected lap/time values retain milliseconds; notes such as DNF appear below the time in a wider column. Existing text sizes are retained.
 
 Default text is rendered at 80% of the previous font sizes, without scaling panel spacing or controls. Race-order start times and countdowns use larger base sizes so they remain more prominent after that reduction.
+
+## Configurable display layouts
+
+Admin includes six split-screen presets plus full-screen rotation. The split-screen views are: race order on top, bottom, left or right, three columns, and three horizontal bands. Drag the two dividers in the layout preview, use their arrow keys (Shift for larger steps), or adjust the split sliders. Each panel has an independent 50–150% font slider; 100% preserves the current default. Save settings applies the selected layout and text sizes to every board on its next refresh, including paused boards. Settings survive server/container restarts. Reset display defaults changes the form only until saved. Light/dark preview uses the existing browser theme. Narrow screens stack the panels. Very small panels allow scrolling; larger fonts reduce rows per page. Finals can optionally expand live results into the estimated-positions space.
+
+Choose **Full-screen rotation** to cycle Live results, Estimated positions, then Race order. Set a separate 5–120 second duration for each screen in Admin and save. Each screen starts on its first page when it appears; long fields still page automatically while visible. A next-screen button advances immediately. Rotation also continues while race data is paused; the data itself stays frozen. The finals expansion option applies to split layouts, while rotation always includes all three screens.

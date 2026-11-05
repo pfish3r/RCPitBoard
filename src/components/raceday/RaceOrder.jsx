@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import RaceRow from "@/components/raceday/RaceRow";
-import { raceOrderSpread, raceCardPageSize, raceCardRows } from "@/lib/raceOrderPaging";
+import { raceOrderSpread, raceCardGeometry, raceCardRows } from "@/lib/raceOrderPaging";
 
 const PAGE_SECONDS = 15;
 
@@ -9,10 +9,10 @@ export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingE
   const viewport = useRef(null);
   const interacting = useRef(false);
   const manualUntil = useRef(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [{ pageSize, columns }, setGeometry] = useState({ pageSize: 10, columns: 5 });
   const [page, setPage] = useState(0);
   const { pageCount, activePage, start, end, groups } = raceOrderSpread(timeline, pageSize, page, 1);
-  const cardRows = raceCardRows(groups[0], pageSize);
+  const cardRows = raceCardRows(groups[0], pageSize, columns);
   const firstSeq = timeline[0]?.seq;
   const hasRaces = timeline.length > 0;
 
@@ -21,7 +21,10 @@ export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingE
     if (!node) return;
     const measure = () => {
       const width = node.clientWidth;
-      setPageSize(raceCardPageSize(width));
+      if (!width) return;
+      const font = parseFloat(getComputedStyle(node).getPropertyValue('--panel-font-factor')) || 1;
+      const next = raceCardGeometry(width, node.clientHeight, font);
+      setGeometry(previous => previous.columns === next.columns && previous.pageSize === next.pageSize ? previous : next);
     };
     measure();
     const observer = new ResizeObserver(measure);
