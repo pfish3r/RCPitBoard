@@ -43,3 +43,6 @@ data/
 .pnpm-store/
 pnpm-lock.yaml
 .update.lock
+
+# Locally copied HTTPS trust certificate
+rcpitboard-root.crt

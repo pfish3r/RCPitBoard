@@ -11,7 +11,9 @@ else
 fi
 if [[ ! -f .env ]]; then
   umask 077
-  printf 'HTTP_PORT=8080\nBIND_ADDRESS=0.0.0.0\n' > .env
+  printf 'HTTP_PORT=80\nBIND_ADDRESS=0.0.0.0\n' > .env
 fi
+source scripts/configure-https.sh
+ensure_https_host .env
 "${docker_command[@]}" compose up -d --build --wait --wait-timeout 120
-echo 'RCPitBoard is ready on http://SERVER-IP:8080 (unless changed in .env).'
+echo 'RCPitBoard is ready on http://SERVER-IP and https://SERVER-IP (unless ports changed in .env). HTTPS uses a local certificate authority.'

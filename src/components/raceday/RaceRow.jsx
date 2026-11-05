@@ -28,8 +28,8 @@ export default function RaceRow({ race, isActiveRound }) {
         {done ? <span className="text-xs text-rd-muted">{shortTime(race.completedLabel) || "Done"}</span>
           : onNow ? <span className="text-xs font-semibold text-rd-acctext">{race.estimatesUnavailable ? "Last known" : "Racing"}</span>
           : hasEta ? <>
-            <span className="block font-mono text-sm font-semibold text-rd-bright">{race.overdue ? "Delayed" : formatClock(race.estimatedStartAt)}</span>
-            <span className="block font-mono text-[10px] leading-tight text-rd-muted">{race.overdue ? "est. passed" : `~${formatCountdown(race.secondsAhead)}`}</span>
+            <span className="race-start-time block font-mono text-sm font-semibold text-rd-bright">{race.overdue ? "Delayed" : formatClock(race.estimatedStartAt)}</span>
+            <span className="race-start-countdown block font-mono text-[10px] leading-tight text-rd-muted">{race.overdue ? "est. passed" : `~${formatCountdown(race.secondsAhead)}`}</span>
           </> : <span className="text-[10px] text-rd-muted">{race.estimatesUnavailable ? "No ETA" : "Pending"}</span>}
       </div>
     </div>

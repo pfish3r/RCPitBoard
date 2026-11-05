@@ -1,0 +1,11 @@
+{
+	admin 127.0.0.1:2019
+	auto_https disable_redirects
+	skip_install_trust
+	default_sni {$HTTPS_HOST:localhost}
+}
+
+https://{$HTTPS_HOST:localhost}:8443 {
+	tls internal
+	reverse_proxy app:3000
+}

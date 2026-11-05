@@ -7,7 +7,7 @@ services:
     init: true
     env_file: .env
     ports:
-      - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PORT:-8080}:3000"
+      - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PORT:-80}:3000"
     volumes:
       - rcpitboard-data:/app/data
     security_opt:
@@ -22,5 +22,39 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+  https:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      HTTPS_HOST: ${HTTPS_HOST:-localhost}
+    ports:
+      - "${BIND_ADDRESS:-0.0.0.0}:${HTTPS_PORT:-443}:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - rcpitboard-caddy-data:/data
+      - rcpitboard-caddy-config:/config
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 volumes:
   rcpitboard-data:
+  rcpitboard-caddy-data:
+  rcpitboard-caddy-config:

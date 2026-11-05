@@ -16,11 +16,11 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm test
       - run: npm run build
-      - run: bash -n scripts/setup.sh scripts/update.sh
+      - run: bash -n scripts/setup.sh scripts/update.sh scripts/configure-https.sh
       - run: cp .env.example .env && docker compose config --quiet
       - name: Build and start the Debian container
         run: |
-          printf '\nBIND_ADDRESS=127.0.0.1\n' >> .env
+          printf '\nBIND_ADDRESS=127.0.0.1\nHTTP_PORT=8080\nHTTPS_PORT=8443\nHTTPS_HOST=127.0.0.1\n' >> .env
           docker compose up -d --build --wait --wait-timeout 120
       - name: Check board and settings without login over HTTP
         run: |
@@ -31,6 +31,19 @@ jobs:
             -H 'Content-Type: application/json' -H 'X-RCPitBoard: 1' \
             --data '{"live_url":"https://lprcoffroad.liverc.com/live/","results_url":"https://lprcoffroad.liverc.com/results/","scroll_speed":30,"refresh_seconds":20}'
           curl --fail --silent http://127.0.0.1:8080/api/settings | grep -q '"scroll_speed":30'
+      - name: Check HTTPS using its local CA and shared settings
+        run: |
+          docker compose cp https:/data/caddy/pki/authorities/local/root.crt "$RUNNER_TEMP/rcpitboard-ca.crt"
+          curl --fail --silent --show-error --retry 20 --retry-delay 1 --retry-all-errors \
+            --cacert "$RUNNER_TEMP/rcpitboard-ca.crt" https://127.0.0.1:8443/api/health
+          curl --fail --silent --cacert "$RUNNER_TEMP/rcpitboard-ca.crt" https://127.0.0.1:8443/admin | grep -q RCPitBoard
+          curl --fail --silent --cacert "$RUNNER_TEMP/rcpitboard-ca.crt" https://127.0.0.1:8443/api/settings | grep -q '"scroll_speed":30'
+          curl --fail --silent -X PUT --cacert "$RUNNER_TEMP/rcpitboard-ca.crt" https://127.0.0.1:8443/api/board \
+            -H 'Content-Type: application/json' -H 'X-RCPitBoard: 1' --data '{"paused":true}'
+          curl --fail --silent http://127.0.0.1:8080/api/board | grep -q '"paused":true'
+          docker compose restart https
+          curl --fail --silent --show-error --retry 20 --retry-delay 1 --retry-all-errors \
+            --cacert "$RUNNER_TEMP/rcpitboard-ca.crt" https://127.0.0.1:8443/api/health
       - name: Container logs
         if: failure()
         run: docker compose logs --tail=100

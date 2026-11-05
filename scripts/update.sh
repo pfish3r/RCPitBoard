@@ -25,6 +25,8 @@ container_id="$(docker_run compose ps -q app)"
 old_image=''
 if [[ -n "$container_id" ]]; then old_image="$(docker_run inspect --format '{{.Image}}' "$container_id")"; fi
 git merge --ff-only origin/main
+source scripts/configure-https.sh
+ensure_https_host .env
 new_commit="$(git rev-parse HEAD)"
 export IMAGE_TAG="$new_commit"
 # Build first: a build failure leaves the running container untouched.

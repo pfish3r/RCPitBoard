@@ -1,3 +1,4 @@
+import FeedStatus from "@/components/raceday/FeedStatus";
 import React from "react";
 import { Link } from "react-router-dom";
 import { Activity, Radio, RefreshCw, Settings2, Video, Monitor, Maximize, Minimize } from "lucide-react";
@@ -23,12 +24,12 @@ export default function RaceDayHeader({
   onRefresh,
   refreshing,
   updatedSeconds,
-  tvMode, onToggleTv, fullscreen, onToggleFullscreen, feedHealthy,
+  tvMode, onToggleTv, fullscreen, onToggleFullscreen, feedHealthy, health, roundLabel,
 }) {
   return (
     <TooltipProvider delayDuration={150}>
-      <header className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-rd-border px-4 py-2.5 sm:px-6">
-        <div className="flex min-w-0 items-center gap-3">
+      <header className="pitboard-header flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-b border-rd-border px-4 py-1.5">
+        <div className="pitboard-brand flex min-w-0 items-center gap-3">
           <span className="relative flex h-2 w-2 shrink-0">
             <span className={`absolute inline-flex h-full w-full rounded-full bg-rd-accent opacity-75 ${feedHealthy ? "animate-ping" : "hidden"}`} />
             <span className={`relative inline-flex h-2 w-2 rounded-full ${feedHealthy ? "bg-rd-accent" : "bg-rd-muted"}`} />
@@ -37,14 +38,13 @@ export default function RaceDayHeader({
             <h1 className="truncate font-display text-2xl font-semibold uppercase leading-none tracking-tight text-rd-bright lg:text-3xl">
               {track?.name || "RCPitBoard"}
             </h1>
-            <p className="mt-1 truncate text-[11px] uppercase tracking-[0.2em] text-rd-muted lg:text-xs">
-              RCPitBoard · {event?.name || "Race day"}
-              {event?.date ? ` · ${event.date}` : ""}
+            <p className="pitboard-event truncate" title={[event?.name, roundLabel, event?.date].filter(Boolean).join(" / ")}>
+              {event?.name || "Race day"}{roundLabel ? ` / ${roundLabel}` : ""}
             </p>
           </div>
         </div>
 
-        <div className="order-3 flex w-full flex-wrap items-center justify-center gap-2 sm:order-none sm:w-auto sm:flex-1">
+        <div className="header-secondary-area order-3 flex w-full flex-wrap items-center justify-center gap-2 sm:order-none sm:w-auto sm:flex-1">
           {!tvMode && feedHealthy && current?.seq > 0 && (
             <div className="flex items-center gap-3 rounded-xl border border-[#c6f24e]/45 bg-[#c6f24e]/[0.08] px-3 py-1.5">
               <span className="font-display text-[10px] font-semibold uppercase tracking-[0.22em] text-rd-acctext">
@@ -113,7 +113,8 @@ export default function RaceDayHeader({
           </div>
         </div>
 
-        <div className="ml-auto flex items-center gap-2 sm:ml-0">
+        <div className="header-actions ml-auto flex items-center gap-2">
+          {health && <FeedStatus health={health} compact />}
           <button type="button" onClick={onToggleTv} aria-pressed={tvMode} className={`${iconButton} w-auto gap-2 border-rd-border px-3`} title={tvMode ? "Exit TV mode" : "TV mode"}>
             <Monitor className="h-4 w-4" /><span className="text-xs">{tvMode ? "Exit TV" : "TV mode"}</span>
           </button>

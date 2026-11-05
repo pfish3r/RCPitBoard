@@ -122,6 +122,8 @@ export default function RaceDay() {
   return (
     <div className={`${tvMode ? "tv-mode " : ""}flex min-h-screen flex-col bg-rd-bg font-body text-rd-text lg:h-screen lg:overflow-hidden`}>
       <RaceDayHeader
+        roundLabel={activeRound?.label}
+        health={health}
         feedHealthy={health.estimatesAvailable}
         tvMode={tvMode}
         onToggleTv={toggleTv}
@@ -143,7 +145,7 @@ export default function RaceDay() {
         updatedSeconds={updatedSeconds}
       />
 
-      <FeedStatus health={health} />
+      {!health.estimatesAvailable && !["paused", "connecting"].includes(health.state) && <FeedStatus health={health} />}
       {fullscreenError && <p role="status" className="px-6 py-2 text-sm text-rd-muted">{fullscreenError}</p>}
 
       {paused && (

@@ -17,18 +17,19 @@ cd RCPitBoard
 bash scripts/setup.sh
 ```
 
-Run these scripts as the checkout owner. They use sudo for Docker only when needed, so Git keeps using your account. Setup creates an untracked .env with the port and bind address. No email or password is requested. Setup builds the image, tests the server and starts the app on port 8080. It restarts after a server reboot.
+Run these scripts as the checkout owner. They use sudo for Docker only when needed, so Git keeps using your account. Setup creates an untracked .env with the port and bind address. No email or password is requested. Setup builds the image, tests the server and starts HTTP on port 80 plus an HTTPS proxy on port 443. It detects the first LAN IPv4 address for the local HTTPS certificate; set HTTPS_HOST in .env if you use a different address or hostname. It restarts after a server reboot.
 
-Open http://SERVER-IP:8080. Open /admin directly to set the track URLs, scrolling speed and refresh interval. The board and track settings need no account. Anyone who can reach the app can change settings. Defaults are the original export's Larry's Performance RC Offroad URLs; configure your preferred track before use. Use HTTPS URLs belonging to the same TRACK.liverc.com hostname.
+Open http://SERVER-IP or https://SERVER-IP. Open /admin directly to set the track URLs, scrolling speed and refresh interval. The board and track settings need no account. Anyone who can reach the app can change settings. Defaults are the original export's Larry's Performance RC Offroad URLs; configure your preferred track before use. Use HTTPS URLs belonging to the same TRACK.liverc.com hostname.
 
 ## Update from GitHub
 
 ```bash
 cd RCPitBoard
+git pull --ff-only origin main
 bash scripts/update.sh
 ```
 
-The script fetches origin/main and fast-forwards your checkout, builds an image tagged with the commit SHA, then deploys and checks container health. It refuses local code changes or divergent history. A build failure leaves the old container running. A failed deployment attempts to restore the previously running image. Settings and .env are preserved. The source checkout remains at the fetched commit after a failure so you can diagnose and retry. This is a manual update script, not a scheduled updater.
+The script fetches origin/main and fast-forwards your checkout, builds an image tagged with the commit SHA, then deploys and checks container health. It refuses local code changes or divergent history. A build failure leaves the old container running. A failed deployment attempts to restore the previously running image. Settings and existing .env values are preserved; HTTPS_HOST is added only if missing. The source checkout remains at the fetched commit after a failure so you can diagnose and retry. This is a manual update script, not a scheduled updater.
 
 Run Git operations as the checkout owner. If sudo reports a Git ownership warning, give your login user Docker access through the normal server administration process, then run the scripts without sudo; do not disable Git ownership checks globally.
 
@@ -43,11 +44,33 @@ sudo docker compose restart app
 sudo docker compose down
 ```
 
-To change the port, edit HTTP_PORT in .env and run docker compose up -d. The server listens on container port 3000. Default host port 8080 avoids existing services on 443. Existing .env files remain valid. ADMIN_EMAIL, ADMIN_PASSWORD and COOKIE_SECURE from older installations are ignored and can be removed.
+HTTP_PORT (default 80) and HTTPS_PORT (default 443) control the two published ports. HTTPS_HOST is the single IP address or hostname used in the certificate, without a URL scheme or port. Existing HTTP_PORT values, including 8080, are kept. Use bash scripts/update.sh after changing .env so the running image tag is preserved. The app listens on container port 3000; the Caddy HTTPS proxy listens internally on 8443. Existing .env files remain valid. ADMIN_EMAIL, ADMIN_PASSWORD and COOKIE_SECURE from older installations are ignored and can be removed.
 
 For access outside your LAN, put an HTTPS reverse proxy or Cloudflare Tunnel in front. Settings are open to everyone who can access the app; use access controls at your proxy if you need to restrict who can change them. When the proxy runs on this same host, set BIND_ADDRESS=127.0.0.1 to restrict the published port to loopback. If the proxy is a separate container, connect it to the Compose network and use app:3000, or configure host access deliberately.
 
 Track settings are stored in the Docker volume rcpitboard_rcpitboard-data. docker compose down keeps it; docker compose down -v deletes it. Back up the settings volume and .env before moving servers. No Base44 user accounts or saved settings are included in the source export.
+
+## HTTPS on your LAN
+
+Docker Compose runs one additional `https` container using Caddy. HTTP remains available and is not redirected. HTTPS uses a locally issued certificate for `HTTPS_HOST`, with automatic renewal; no public DNS or internet certificate challenge is needed. Certificates and the local CA are stored in `rcpitboard_rcpitboard-caddy-data` and survive updates/reboots. Do not delete that volume unless you intend to replace the CA. The accompanying config volume is `rcpitboard_rcpitboard-caddy-config`.
+
+Browsers will warn until you trust this CA. Copy its **public** root certificate from your own server, then install it in the trusted root store on each viewing device using your normal administration process:
+
+```bash
+docker compose cp https:/data/caddy/pki/authorities/local/root.crt ./rcpitboard-root.crt
+```
+
+Only copy `root.crt`; keep private CA keys in the Docker volume. For a publicly trusted certificate, use your existing HTTPS reverse proxy or configure a public-domain deployment separately. If 443 is already occupied, choose another HTTPS_PORT or use the existing proxy.
+
+Check both listeners (replace SERVER-IP with HTTPS_HOST). The HTTPS check validates the certificate against the copied CA:
+
+```bash
+curl --fail http://SERVER-IP/api/health
+curl --fail --cacert ./rcpitboard-root.crt https://SERVER-IP/api/health
+docker compose logs --tail=100 https
+```
+
+If the VM's address changes, update HTTPS_HOST and redeploy. HTTPS_HOST defaults to localhost when running Compose directly without the setup/update scripts; set it to the address used by your clients first. To serve multiple aliases, customize Caddy's certificate/site configuration.
 
 ## Development without Docker
 
