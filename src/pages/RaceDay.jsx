@@ -16,6 +16,7 @@ import FeedStatus from "@/components/raceday/FeedStatus";
 import useTvMode from "@/hooks/useTvMode";
 import RaceDayHeader from "@/components/raceday/RaceDayHeader";
 import RoundTabs from "@/components/raceday/RoundTabs";
+import FullscreenRaceStrip from "@/components/raceday/FullscreenRaceStrip";
 import RaceOrder from "@/components/raceday/RaceOrder";
 import LiveResults from "@/components/raceday/LiveResults";
 import EpdPanel from "@/components/raceday/EpdPanel";
@@ -186,6 +187,7 @@ export default function RaceDay() {
         </main>
       ) : (
         <>
+          {(rotating || fullscreen || tvMode) && <FullscreenRaceStrip current={snapshot?.current} timeline={activeTimeline} timing={snapshot?.timing} now={now} estimatesAvailable={health.estimatesAvailable} paused={paused} />}
           {rotating && <div className="rotation-toolbar"><span>{({live:"Live results",epd:"Estimated positions",order:"Race order"})[rotation.panel]} / Next: {({live:"Live results",epd:"Estimated positions",order:"Race order"})[nextDisplayPanel(rotation.panel)]} in {rotation.remaining}s</span><button type="button" onClick={rotation.advance}>Next screen</button></div>}
           <div style={displayLive ? { ...displayGrid(display, finalsLayout), ...(rotating ? { gridTemplateAreas: '\"' + rotation.panel + '\"' } : {}) } : undefined} className={`dashboard-layout ${displayLive ? `dashboard-with-live dashboard-configured ${rotating ? "dashboard-rotating" : ""} ${finalsLayout ? "dashboard-finals" : ""}` : "dashboard-order-only"}`}>
             {(!rotating || rotation.panel === "order") && <main style={panelTypography(display, "order")} className="dashboard-order board-panel">
