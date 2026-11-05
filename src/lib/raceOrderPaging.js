@@ -25,3 +25,7 @@ export function raceCardGeometry(width, height, font = 1) {
   const rowCount = height >= 250 * Math.max(1, font) ? 2 : 1;
   return { columns, pageSize: columns * rowCount };
 }
+
+export function raceRectanglePageSize(height, font = 1) {
+  return Math.max(1, Math.min(14, Math.floor((height + 5) / (76 * Math.max(1, font) + 5))));
+}

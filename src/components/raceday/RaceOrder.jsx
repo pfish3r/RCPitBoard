@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import RaceRow from "@/components/raceday/RaceRow";
-import { raceOrderSpread, raceCardGeometry, raceCardRows } from "@/lib/raceOrderPaging";
+import { raceOrderSpread, raceRectanglePageSize } from "@/lib/raceOrderPaging";
 
 const PAGE_SECONDS = 15;
 
@@ -9,10 +9,9 @@ export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingE
   const viewport = useRef(null);
   const interacting = useRef(false);
   const manualUntil = useRef(0);
-  const [{ pageSize, columns }, setGeometry] = useState({ pageSize: 10, columns: 5 });
+  const [pageSize, setPageSize] = useState(5);
   const [page, setPage] = useState(0);
   const { pageCount, activePage, start, end, groups } = raceOrderSpread(timeline, pageSize, page, 1);
-  const cardRows = raceCardRows(groups[0], pageSize, columns);
   const firstSeq = timeline[0]?.seq;
   const hasRaces = timeline.length > 0;
 
@@ -23,8 +22,7 @@ export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingE
       const width = node.clientWidth;
       if (!width) return;
       const font = parseFloat(getComputedStyle(node).getPropertyValue('--panel-font-factor')) || 1;
-      const next = raceCardGeometry(width, node.clientHeight, font);
-      setGeometry(previous => previous.columns === next.columns && previous.pageSize === next.pageSize ? previous : next);
+      setPageSize(raceRectanglePageSize(node.clientHeight, font));
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -61,10 +59,8 @@ export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingE
       </header>
       {timeline.length ? (
         <>
-          <div ref={viewport} className="race-card-grid" style={{ "--race-card-rows": cardRows.length }} role="list" aria-label="Upcoming races">
-            {cardRows.map((races, index) => <div className="race-card-row" key={index}>
-              {races.map(race => <RaceRow key={race.seq} race={race} isActiveRound={isActiveRound} />)}
-            </div>)}
+          <div ref={viewport} className="race-card-grid race-rectangle-list" style={{ "--race-card-rows": groups[0].length }} role="list" aria-label="Upcoming races">
+            {groups[0].map(race => <RaceRow key={race.seq} race={race} isActiveRound={isActiveRound} />)}
           </div>
           <nav aria-label="Race order pages" className="flex shrink-0 flex-wrap items-center justify-between gap-2 pt-2 text-xs text-rd-muted">
             <span>{start + 1}-{end} of {timeline.length}{tvMode && pageCount > 1 ? " / Auto 15s" : ""}</span>

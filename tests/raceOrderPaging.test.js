@@ -24,3 +24,12 @@ test('partial race pages balance two rows and a small field uses one row', () =>
   assert.deepEqual(raceCardRows(races.slice(0,9),10).map(row => row.length),[5,4]);
   assert.deepEqual(raceCardRows(races.slice(0,2),2).map(row => row.length),[1,1]);
 });
+
+import { raceRectanglePageSize } from '../src/lib/raceOrderPaging.js';
+test('horizontal race rectangles page using available height and font size',()=>{
+  assert.equal(raceRectanglePageSize(320),4);
+  assert.equal(raceRectanglePageSize(800),9);
+  assert.equal(raceRectanglePageSize(320,1.5),2);
+  assert.equal(raceRectanglePageSize(30),1);
+  assert.equal(raceRectanglePageSize(3000),14);
+});

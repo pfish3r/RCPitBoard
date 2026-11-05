@@ -119,3 +119,5 @@ Choose **Full-screen rotation** to cycle Live results, Estimated positions, then
 TV mode, browser full-screen and full-screen rotation always keep a current/next race strip above the panels. It shows the active race, estimated remaining time and finish clock, plus the next race start clock and countdown. Estimates hide on stale timing and stay frozen during admin pause. The strip uses the active round even when another round is selected.
 
 Race cards keep the class name on one compact top line with an ellipsis and the full name in its tooltip. Heat appears below the name. Estimated start and countdown occupy the main two-column card area and scale to the available card width and height.
+
+Race order now uses full-width horizontal rectangles: race number, class and heat on the left, with estimated start and countdown side by side on the right. The number of rows per page adapts to panel height and font size. Automatic paging and all display presets remain available.
