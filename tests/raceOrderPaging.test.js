@@ -1,32 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { raceOrderSpread } from '../src/lib/raceOrderPaging.js';
-import { isFinalsRound } from '../src/lib/raceday.js';
-const races = Array.from({length:23}, (_,index) => ({seq:index+1}));
-const numbers = group => group.map(race => race.seq);
+import { raceOrderSpread, raceCardPageSize } from '../src/lib/raceOrderPaging.js';
+const races = Array.from({ length: 23 }, (_, index) => ({ seq: index + 1 }));
 
-test('finals show consecutive pages and advance both halves together', () => {
-  const first = raceOrderSpread(races,5,0,2);
-  assert.equal(first.pageCount,3);
-  assert.deepEqual(first.groups.map(numbers), [[1,2,3,4,5],[6,7,8,9,10]]);
-  const second = raceOrderSpread(races,5,1,2);
-  assert.deepEqual(second.groups.map(numbers), [[11,12,13,14,15],[16,17,18,19,20]]);
-  assert.equal(second.start,10);
-  assert.equal(second.end,20);
+test('race cards fit two rows at each panel width', () => {
+  for (const [width, size] of [[320,2], [380,4], [599,4], [600,6], [999,6], [1000,10], [1920,10]]) {
+    assert.equal(raceCardPageSize(width), size);
+    assert.equal(size % 2, 0);
+  }
 });
-
-test('odd last pages do not duplicate races and shrinking fields clamp the spread', () => {
-  const last = raceOrderSpread(races,5,2,2);
-  assert.deepEqual(last.groups.map(numbers),[[21,22,23],[]]);
-  assert.equal(last.end,23);
-  const smaller = raceOrderSpread(races.slice(0,7),5,2,2);
-  assert.equal(smaller.activePage,0);
-  assert.deepEqual(smaller.groups.map(numbers),[[1,2,3,4,5],[6,7]]);
-  assert.deepEqual(raceOrderSpread([],5,0,2).groups,[[],[]]);
+test('ten-card pages advance without duplicates and preserve the final partial page', () => {
+  const pages = [0,1,2].map(page => raceOrderSpread(races,10,page));
+  assert.deepEqual(pages.map(p => p.groups[0].map(r => r.seq)), [races.slice(0,10),races.slice(10,20),races.slice(20)].map(group => group.map(r => r.seq)));
+  assert.equal(pages[2].end,23);
+  assert.equal(pages[0].pageCount,3);
+  assert.equal(raceOrderSpread(races.slice(0,4),10,2).activePage,0);
+  assert.deepEqual(raceOrderSpread([],10).groups,[[]]);
 });
-
-test('qualifiers retain single-page navigation; finals and mains enable paired layout', () => {
-  assert.deepEqual(raceOrderSpread(races,5,1).groups.map(numbers),[[6,7,8,9,10]]);
-  for(const label of ['A Final 1','Finals Round 2','A Main','Feature']) assert.equal(isFinalsRound(label),true);
-  assert.equal(isFinalsRound('Qualifier Round 2'),false);
+import { raceCardRows } from '../src/lib/raceOrderPaging.js';
+test('partial race pages balance two rows and a small field uses one row', () => {
+  assert.deepEqual(raceCardRows(races.slice(0,4),10).map(row => row.length),[4]);
+  assert.deepEqual(raceCardRows(races.slice(0,7),10).map(row => row.length),[4,3]);
+  assert.deepEqual(raceCardRows(races.slice(0,9),10).map(row => row.length),[5,4]);
+  assert.deepEqual(raceCardRows(races.slice(0,2),2).map(row => row.length),[1,1]);
 });

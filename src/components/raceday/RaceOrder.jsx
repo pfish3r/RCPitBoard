@@ -1,17 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import RaceRow from "@/components/raceday/RaceRow";
-import { raceOrderSpread } from "@/lib/raceOrderPaging";
+import { raceOrderSpread, raceCardPageSize, raceCardRows } from "@/lib/raceOrderPaging";
 
 const PAGE_SECONDS = 15;
 
-export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingEstimate, tvMode = false, columns = 1 }) {
+export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingEstimate, tvMode = false }) {
   const viewport = useRef(null);
   const interacting = useRef(false);
   const manualUntil = useRef(0);
-  const [pageSize, setPageSize] = useState(8);
+  const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(0);
-  const { pageCount, activePage, start, end, groups } = raceOrderSpread(timeline, pageSize, page, columns);
+  const { pageCount, activePage, start, end, groups } = raceOrderSpread(timeline, pageSize, page, 1);
+  const cardRows = raceCardRows(groups[0], pageSize);
   const firstSeq = timeline[0]?.seq;
   const hasRaces = timeline.length > 0;
 
@@ -19,16 +20,16 @@ export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingE
     const node = viewport.current;
     if (!node) return;
     const measure = () => {
-      const rowHeight = Number.parseFloat(getComputedStyle(node).getPropertyValue("--race-order-row-height")) || 48;
-      if (node.clientHeight > 0) setPageSize(Math.max(1, Math.min(14, Math.floor(node.clientHeight / rowHeight))));
+      const width = node.clientWidth;
+      setPageSize(raceCardPageSize(width));
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasRaces, tvMode, columns]);
+  }, [hasRaces, tvMode]);
 
-  useEffect(() => { setPage(0); }, [roundLabel, firstSeq, pageSize, tvMode, columns]);
+  useEffect(() => { setPage(0); }, [roundLabel, firstSeq, pageSize, tvMode]);
 
   useEffect(() => {
     if (pageCount <= 1 || (!tvMode && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
@@ -45,44 +46,29 @@ export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingE
   };
 
   return (
-    <section className="race-order flex min-h-0 flex-col lg:h-full" aria-label="Race order"
+    <section className="race-order race-order-cards flex min-h-0 flex-col lg:h-full" aria-label="Race order"
       onPointerEnter={() => { interacting.current = true; }}
       onPointerLeave={() => { interacting.current = false; }}
       onFocusCapture={() => { interacting.current = true; }}
       onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) interacting.current = false; }}>
-      <div className="mb-2 flex shrink-0 items-baseline justify-between gap-3">
+      <header className="race-card-heading">
         <h2 className="board-title">Race order</h2>
-        <span className="text-xs text-rd-muted">{timeline.length} {isActiveRound ? "remaining" : "races"}</span>
-      </div>
-      <p className="mb-2 shrink-0 truncate text-xs text-rd-muted" title={roundLabel}>
-        {roundLabel || "Race lineup"}
-        {isActiveRound && ` / Est. gap ${Math.round((timingEstimate?.turnaroundSeconds ?? 120) / 6) / 10} min`}
-      </p>
+        <p title={roundLabel}>{roundLabel || "Race lineup"}{isActiveRound && ` / Est. gap ${Math.round((timingEstimate?.turnaroundSeconds ?? 120) / 6) / 10} min`}</p>
+        <span>{timeline.length} {isActiveRound ? "remaining" : "races"}</span>
+      </header>
       {timeline.length ? (
         <>
-          <div className={`race-order-spread ${columns === 2 ? "race-order-spread-double" : ""}`}>
-            {groups.map((races, index) => (
-              <div key={index} role="table" aria-label={`${roundLabel || "Round"} race order page ${activePage * columns + index + 1}`}
-                className="race-order-page flex min-h-0 flex-1 flex-col rounded-xl border border-rd-border bg-rd-panel">
-                <div role="rowgroup" className="shrink-0 border-b border-rd-border bg-rd-surface">
-                  <div role="row" className="race-order-grid px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-rd-muted">
-                    <span role="columnheader">Race</span><span role="columnheader">Class</span>
-                    <span role="columnheader">Heat</span><span role="columnheader" className="text-right">Est. start</span>
-                  </div>
-                </div>
-                <div ref={index === 0 ? viewport : undefined} role="rowgroup" className="race-order-viewport min-h-0 flex-1 overflow-y-auto">
-                  {races.length ? races.map(race => <RaceRow key={race.seq} race={race} isActiveRound={isActiveRound} />)
-                    : <p className="p-4 text-sm text-rd-muted">End of round</p>}
-                </div>
-              </div>
-            ))}
+          <div ref={viewport} className="race-card-grid" style={{ "--race-card-rows": cardRows.length }} role="list" aria-label="Upcoming races">
+            {cardRows.map((races, index) => <div className="race-card-row" key={index}>
+              {races.map(race => <RaceRow key={race.seq} race={race} isActiveRound={isActiveRound} />)}
+            </div>)}
           </div>
           <nav aria-label="Race order pages" className="flex shrink-0 flex-wrap items-center justify-between gap-2 pt-2 text-xs text-rd-muted">
             <span>{start + 1}-{end} of {timeline.length}{tvMode && pageCount > 1 ? " / Auto 15s" : ""}</span>
             <div className="flex items-center gap-1.5">
               {activePage > 0 && <button type="button" onClick={() => pickPage(0)} className="rounded-md border border-rd-border px-2 py-1.5 text-rd-acctext">{isActiveRound ? "Next up" : "First page"}</button>}
               <button type="button" aria-label="Previous races" disabled={activePage === 0} onClick={() => pickPage(activePage - 1)} className="rounded-md border border-rd-border p-1.5 text-rd-bright disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
-              <span className="px-1 tabular-nums">{columns === 2 ? `Spread ${activePage + 1}/${pageCount}` : `${activePage + 1}/${pageCount}`}</span>
+              <span className="px-1 tabular-nums">{`${activePage + 1}/${pageCount}`}</span>
               <button type="button" aria-label="Later races" disabled={activePage === pageCount - 1} onClick={() => pickPage(activePage + 1)} className="rounded-md border border-rd-border p-1.5 text-rd-bright disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
             </div>
           </nav>

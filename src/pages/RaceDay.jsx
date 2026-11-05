@@ -95,7 +95,7 @@ export default function RaceDay() {
   useHeatStartChime({ live: snapshot?.live, enabled: health.estimatesAvailable && !paused && audioOn && announcementSettings.heatStartChime });
 
 
-  const doubleRaceOrder = displayLive && isFinalsRound(activeRound?.label);
+  const finalsLayout = displayLive && isFinalsRound(activeRound?.label);
   const scrollSpeed = snapshot?.track?.scrollSpeed || DEFAULT_SCROLL_SPEED;
 
   const inViewRound = timeline.some((race) => race.mine);
@@ -181,10 +181,20 @@ export default function RaceDay() {
         </main>
       ) : (
         <>
-          <div className={`dashboard-layout ${displayLive ? "dashboard-with-live" : "dashboard-order-only"}`}>
+          <div className={`dashboard-layout ${displayLive ? `dashboard-with-live ${finalsLayout ? "dashboard-finals" : ""}` : "dashboard-order-only"}`}>
+            <main className="dashboard-order board-panel">
+              {!tvMode && <div className="mb-2 shrink-0">
+                <RoundTabs rounds={rounds} activeRoundId={snapshot?.activeRoundId} value={viewRound?.id} onChange={setViewRoundId} />
+              </div>}
+              <div className="min-h-0 flex-1">
+                <RaceOrder timeline={visibleTimeline} roundLabel={viewRound?.label} isActiveRound={isActiveRound}
+                  timingEstimate={snapshot?.timingEstimate} tvMode={tvMode} />
+              </div>
+            </main>
             {displayLive && (
               <div className="dashboard-live board-panel">
                 <LiveResults
+                  tvMode={tvMode}
                   live={snapshot?.live}
                   driverKey={driverKey}
                   stale={!health.estimatesAvailable && !paused}
@@ -194,16 +204,7 @@ export default function RaceDay() {
                 />
               </div>
             )}
-            <main className={`dashboard-order board-panel ${doubleRaceOrder ? "finals-order" : ""}`}>
-              {!tvMode && <div className="mb-2 shrink-0">
-                <RoundTabs rounds={rounds} activeRoundId={snapshot?.activeRoundId} value={viewRound?.id} onChange={setViewRoundId} />
-              </div>}
-              <div className="min-h-0 flex-1">
-                <RaceOrder timeline={visibleTimeline} roundLabel={viewRound?.label} isActiveRound={isActiveRound}
-                  timingEstimate={snapshot?.timingEstimate} tvMode={tvMode} columns={doubleRaceOrder ? 2 : 1} />
-              </div>
-            </main>
-            {displayLive && !doubleRaceOrder && (
+            {displayLive && !finalsLayout && (
               <aside aria-label="Estimated positions" className="dashboard-epd board-panel">
                 <EpdPanel epd={snapshot?.epd} live={snapshot?.live} driverKey={driverKey} scrollSpeed={scrollSpeed} />
               </aside>
