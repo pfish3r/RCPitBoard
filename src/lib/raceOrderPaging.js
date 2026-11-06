@@ -26,6 +26,6 @@ export function raceCardGeometry(width, height, font = 1) {
   return { columns, pageSize: columns * rowCount };
 }
 
-export function raceRectanglePageSize(height, font = 1) {
-  return Math.max(1, Math.min(14, Math.floor((height + 5) / (84 * Math.max(1, font) + 5))));
+export function raceRectanglePageSize(height, font = 1, rowHeight = 84) {
+  return Math.max(1, Math.min(14, Math.floor((height + 5) / (rowHeight * Math.max(1, font) + 5))));
 }

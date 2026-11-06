@@ -48,3 +48,9 @@ test('full-screen rotation repeats in order and validates each screen duration',
   for (const seconds of [0,4,121,15.5]) assert.throws(()=>validateDisplay({durations:{live:seconds}}));
   assert.equal(validateDisplay({durations:{live:30}}).durations.epd,15);
 });
+test('race row height defaults for existing settings and validates saved heights',()=>{
+  assert.equal(validateDisplay().raceRowHeight,84);
+  assert.equal(validateDisplay({raceRowHeight:120}).raceRowHeight,120);
+  assert.equal(panelTypography({...DEFAULT_DISPLAY,raceRowHeight:120},'order')['--race-row-height'],'120px');
+  for(const raceRowHeight of [0,55,201,84.5,'100']) assert.throws(()=>validateDisplay({raceRowHeight}));
+});

@@ -196,7 +196,7 @@ export default function RaceDay() {
               </div>}
               <div className="min-h-0 flex-1">
                 <RaceOrder timeline={visibleTimeline} roundLabel={viewRound?.label} isActiveRound={isActiveRound}
-                  timingEstimate={snapshot?.timingEstimate} tvMode={tvMode} />
+                  timingEstimate={snapshot?.timingEstimate} tvMode={tvMode} rowHeight={display.raceRowHeight ?? 84} fontScale={display.fonts.order / 100} />
               </div>
             </main>}
             {displayLive && (!rotating || rotation.panel === "live") && (

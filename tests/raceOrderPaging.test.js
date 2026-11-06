@@ -33,3 +33,8 @@ test('horizontal race rectangles page using available height and font size',()=>
   assert.equal(raceRectanglePageSize(30),1);
   assert.equal(raceRectanglePageSize(3000),14);
 });
+test('custom race row height controls page capacity separately from text size',()=>{
+  assert.equal(raceRectanglePageSize(320,1,56),5);
+  assert.equal(raceRectanglePageSize(320,1,120),2);
+  assert.equal(raceRectanglePageSize(320,1.5,120),1);
+});

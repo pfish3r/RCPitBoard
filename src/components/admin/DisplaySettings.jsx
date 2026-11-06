@@ -37,7 +37,7 @@ export default function DisplaySettings({ value, onChange }) {
       <button type="button" className="display-button" onClick={() => { const next = theme === 'dark' ? 'light' : 'dark'; setTheme(next); applyTheme(next); }}>Switch to {theme === 'dark' ? 'light' : 'dark'} mode</button>
     </div>
     <div ref={preview} className="layout-editor" style={displayGrid(value)}>
-      {Object.entries(TITLES).filter(([key]) => value.preset !== 'rotate' || key === 'live').map(([key,title]) => <div key={key} className={`layout-preview-panel preview-${key}`} style={{gridArea:key, '--preview-font':value.fonts[key]/100}}>
+      {Object.entries(TITLES).filter(([key]) => value.preset !== 'rotate' || key === 'live').map(([key,title]) => <div key={key} className={`layout-preview-panel preview-${key}`} style={{gridArea:key, '--preview-font':value.fonts[key]/100, '--preview-row-height': `${value.raceRowHeight ?? 84}px`}}>
         <h3>{title}</h3>
         {key === 'order' ? <div className="preview-race-cards">{[22,23,24,25].map((n,i)=><div key={n}><b>{n}</b><span>2WD Modified Buggy<br/><small>Heat {i+1}/4</small><br/><strong>{i?'18:27':'18:21'}</strong><small> in {i?'7:24':'1:38'}</small></span></div>)}</div>
           : <div className="preview-table"><div><span>Pos / Driver</span><span>{key === 'live' ? 'Last / Pace' : 'Projected'}</span></div>{['Paul Fisher','Daniel Roberts','Craig Jones','Ashley Smith'].map((name,i)=><div key={name}><span>{i+1} {name}</span><strong>{key === 'live' ? '18.234' : '17/5:02.1'}</strong></div>)}</div>}
@@ -56,6 +56,7 @@ export default function DisplaySettings({ value, onChange }) {
     <div className="display-adjustments">
       {(value.preset === 'rotate' ? [] : [['primary','Main split'],['secondary','Secondary split']]).map(([key,label])=><label key={key}>{label} <strong>{value[key]}%</strong>
         <input type="range" min="25" max="75" step="1" value={value[key]} onChange={event=>change({[key]:Number(event.target.value)})}/></label>)}
+      <label>Race event row height <strong>{value.raceRowHeight ?? 84}px</strong><input type="range" min="56" max="200" step="4" value={value.raceRowHeight ?? 84} onChange={event=>change({raceRowHeight:Number(event.target.value)})}/><small>Base height at 100% font. Larger fonts scale rows too.</small></label>
       {Object.entries(TITLES).map(([key,title])=><label key={key}>{title} font <strong>{value.fonts[key]}%</strong>
         <input type="range" min="50" max="150" step="5" value={value.fonts[key]} onChange={event=>change({fonts:{...value.fonts,[key]:Number(event.target.value)}})}/></label>)}
     </div>

@@ -582,3 +582,11 @@ body { font-size: 1rem; }
 .race-rectangle-list { grid-template-rows: repeat(var(--race-card-rows, 1), calc(84px * max(1, var(--panel-font-factor, 1)))); align-content: start; }
 
 .race-order-cards .race-card *, .race-order-cards .race-card-heading p { font-style: normal; }
+.race-rectangle-list { grid-template-rows: repeat(var(--race-card-rows, 1), calc(var(--race-row-height, 84px) * max(1, var(--panel-font-factor, 1)))); }
+.race-rectangle-list .race-card-details dd { font-size: min(clamp(1.7rem, 4.5cqw, 3.4rem), calc((var(--race-row-height, 84px) - 2.25rem) / 0.8)); }
+.preview-race-cards { grid-template-columns: minmax(0, 1fr); }
+.preview-race-cards > div { min-height: calc(var(--preview-row-height, 84px) * 0.55); }
+.display-adjustments small { display: block; margin-top: 0.4rem; color: var(--rd-muted); }
+.race-rectangle-list .race-card-body { padding-block: 0.35rem; }
+.race-rectangle-list .race-card-heat { line-height: 1.05; margin-top: 0.1rem; }
+.race-rectangle-list .race-card-number span { line-height: 1; }

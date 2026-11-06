@@ -51,7 +51,7 @@ test('settings work without credentials and preserve validation, persistence and
     assert.equal((await fetch(base + '/api/auth/login', { method: 'POST', headers, body: '{}' })).status, 404);
     assert.equal((await fetch(base + '/api/settings', { method: 'PUT', body: JSON.stringify(settings) })).status, 403);
     assert.equal((await fetch(base + '/api/settings', { method: 'PUT', headers, body: JSON.stringify({ ...settings, live_url: 'http://127.0.0.1/' }) })).status, 400);
-    const changed = { ...settings, scroll_speed: 30, display: { ...DEFAULT_DISPLAY, preset: "left", primary: 40, fonts: { order: 110, live: 125, epd: 90 } } };
+    const changed = { ...settings, scroll_speed: 30, display: { ...DEFAULT_DISPLAY, preset: "left", primary: 40, raceRowHeight: 112, fonts: { order: 110, live: 125, epd: 90 } } };
     const saved = await fetch(base + '/api/settings', { method: 'PUT', headers, body: JSON.stringify(changed) });
     assert.equal(saved.status, 200);
     assert.equal(saved.headers.get('set-cookie'), null);

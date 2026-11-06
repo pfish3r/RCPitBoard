@@ -5,7 +5,7 @@ import { raceOrderSpread, raceRectanglePageSize } from "@/lib/raceOrderPaging";
 
 const PAGE_SECONDS = 15;
 
-export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingEstimate, tvMode = false }) {
+export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingEstimate, tvMode = false, rowHeight = 84, fontScale = 1 }) {
   const viewport = useRef(null);
   const interacting = useRef(false);
   const manualUntil = useRef(0);
@@ -22,13 +22,13 @@ export default function RaceOrder({ timeline, roundLabel, isActiveRound, timingE
       const width = node.clientWidth;
       if (!width) return;
       const font = parseFloat(getComputedStyle(node).getPropertyValue('--panel-font-factor')) || 1;
-      setPageSize(raceRectanglePageSize(node.clientHeight, font));
+      setPageSize(raceRectanglePageSize(node.clientHeight, font, rowHeight));
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasRaces, tvMode]);
+  }, [hasRaces, tvMode, rowHeight, fontScale]);
 
   useEffect(() => { setPage(0); }, [roundLabel, firstSeq, pageSize, tvMode]);
 

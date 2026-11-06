@@ -7,7 +7,7 @@ export const LAYOUT_PRESETS = [
   { id: 'columns', label: 'Three columns', description: 'Race order, live results, estimated positions', primary: 34, secondary: 50 },
   { id: 'rows', label: 'Three horizontal bands', description: 'Race order, live results, estimated positions', primary: 34, secondary: 50 },
 ];
-export const DEFAULT_DISPLAY = { preset: 'top', primary: 44, secondary: 50,
+export const DEFAULT_DISPLAY = { preset: 'top', primary: 44, secondary: 50, raceRowHeight: 84,
   fonts: { order: 100, live: 100, epd: 100 }, finalsExpand: true, durations: { live: 15, epd: 15, order: 15 } };
 export function validateDisplay(input = DEFAULT_DISPLAY) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Display settings must be an object');
@@ -24,8 +24,9 @@ export function validateDisplay(input = DEFAULT_DISPLAY) {
   for (const key of ['live', 'epd', 'order']) {
     if (!Number.isInteger(result.durations[key]) || result.durations[key] < 5 || result.durations[key] > 120) throw new Error('Screen durations must be between 5 and 120 seconds');
   }
+  if (!Number.isInteger(result.raceRowHeight) || result.raceRowHeight < 56 || result.raceRowHeight > 200) throw new Error('Race row height must be between 56 and 200 pixels');
   if (typeof result.finalsExpand !== 'boolean') throw new Error('Finals expansion must be true or false');
-  return { preset: result.preset, primary: result.primary, secondary: result.secondary,
+  return { preset: result.preset, primary: result.primary, secondary: result.secondary, raceRowHeight: result.raceRowHeight,
     fonts: Object.fromEntries(['order','live','epd'].map(key => [key, result.fonts[key]])), finalsExpand: result.finalsExpand, durations: Object.fromEntries(['live','epd','order'].map(key => [key, result.durations[key]])) };
 }
 export function displayGrid(config, finals = false) {
@@ -57,7 +58,7 @@ export function displayGrid(config, finals = false) {
 }
 export function panelTypography(config, panel) {
   const factor = validateDisplay(config).fonts[panel] / 100;
-  return { '--rd-font-scale': 0.8 * factor, '--panel-font-factor': factor,
+  return { '--race-row-height': `${validateDisplay(config).raceRowHeight}px`, '--rd-font-scale': 0.8 * factor, '--panel-font-factor': factor,
     '--live-row-height': `${48 * Math.max(1, factor)}px`, '--epd-row-height': `${56 * Math.max(1, factor)}px` };
 }
 export function splitHandles(config) {

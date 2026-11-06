@@ -121,3 +121,5 @@ TV mode, browser full-screen and full-screen rotation always keep a current/next
 Race cards keep the class name on one compact top line with an ellipsis and the full name in its tooltip. Heat appears below the name. Estimated start and countdown occupy the main two-column card area and scale to the available card width and height.
 
 Race order now uses full-width horizontal rectangles: race number, class and heat on the left, with estimated start and countdown side by side on the right. The number of rows per page adapts to panel height and font size. Automatic paging and all display presets remain available.
+
+Admin > Display layout includes a separate Race event row height slider (56–200 pixels, default 84). Larger fonts scale this base height to keep text readable. Race paging recalculates immediately when saved height changes, and the setting persists across restarts.
