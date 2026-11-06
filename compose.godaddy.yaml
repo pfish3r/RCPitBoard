@@ -1,0 +1,12 @@
+# Enabled by scripts/enable-letsencrypt.sh through COMPOSE_FILE in .env.
+services:
+  https:
+    image: rcpitboard-caddy-godaddy:local
+    build:
+      context: .
+      dockerfile: docker/caddy-godaddy.Dockerfile
+    env_file:
+      - path: .env.godaddy
+        format: raw
+    volumes:
+      - ./Caddyfile.godaddy:/etc/caddy/Caddyfile:ro

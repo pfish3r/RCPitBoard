@@ -16,7 +16,8 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm test
       - run: npm run build
-      - run: bash -n scripts/setup.sh scripts/update.sh scripts/configure-https.sh
+      - run: bash -n scripts/setup.sh scripts/update.sh scripts/configure-https.sh scripts/enable-letsencrypt.sh
+      - run: bash tests/https-setup.test.sh
       - run: cp .env.example .env && docker compose config --quiet
       - name: Build and start the Debian container
         run: |
@@ -44,6 +45,14 @@ jobs:
           docker compose restart https
           curl --fail --silent --show-error --retry 20 --retry-delay 1 --retry-all-errors \
             --cacert "$RUNNER_TEMP/rcpitboard-ca.crt" https://127.0.0.1:8443/api/health
+      - name: Build and validate GoDaddy TLS support without issuing a certificate
+        run: |
+          printf 'GODADDY_API_TOKEN=ci-key:ci-secret\nACME_EMAIL=admin@example.com\n' > .env.godaddy
+          docker compose -f compose.yaml -f compose.godaddy.yaml config --quiet
+          docker compose -f compose.yaml -f compose.godaddy.yaml build https
+          docker run --rm rcpitboard-caddy-godaddy:local caddy list-modules | grep -q dns.providers.godaddy
+          docker compose -f compose.yaml -f compose.godaddy.yaml run --rm --no-deps \
+            -e HTTPS_HOST=pitboard.example.com https caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
       - name: Container logs
         if: failure()
         run: docker compose logs --tail=100

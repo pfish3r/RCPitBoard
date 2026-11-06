@@ -8,3 +8,5 @@ data
 .pnpm-store
 *.zip
 tests-output
+
+.env.godaddy*

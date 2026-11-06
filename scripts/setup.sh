@@ -16,4 +16,5 @@ fi
 source scripts/configure-https.sh
 ensure_https_host .env
 "${docker_command[@]}" compose up -d --build --wait --wait-timeout 120
-echo 'RCPitBoard is ready on http://SERVER-IP and https://SERVER-IP (unless ports changed in .env). HTTPS uses a local certificate authority.'
+echo 'For a trusted certificate using GoDaddy DNS, run: bash scripts/enable-letsencrypt.sh'
+echo 'RCPitBoard is ready on http://SERVER-IP and https://SERVER-IP (unless ports changed in .env). HTTPS uses the configured certificate mode.'

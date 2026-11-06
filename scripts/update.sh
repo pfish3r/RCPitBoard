@@ -30,7 +30,7 @@ ensure_https_host .env
 new_commit="$(git rev-parse HEAD)"
 export IMAGE_TAG="$new_commit"
 # Build first: a build failure leaves the running container untouched.
-docker_run compose build app || { echo 'Build failed. Existing container is still running. Fix the issue and run this script again.'; exit 1; }
+docker_run compose build || { echo 'Build failed. Existing container is still running. Fix the issue and run this script again.'; exit 1; }
 if docker_run compose up -d --no-build --wait --wait-timeout 120; then
   echo "RCPitBoard deployed: $new_commit"
 else

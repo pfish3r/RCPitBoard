@@ -123,3 +123,25 @@ Race cards keep the class name on one compact top line with an ellipsis and the 
 Race order now uses full-width horizontal rectangles: race number, class and heat on the left, with estimated start and countdown side by side on the right. The number of rows per page adapts to panel height and font size. Automatic paging and all display presets remain available.
 
 Admin > Display layout includes a separate Race event row height slider (56–200 pixels, default 84). Larger fonts scale this base height to keep text readable. Race paging recalculates immediately when saved height changes, and the setting persists across restarts.
+
+## Trusted HTTPS with GoDaddy DNS and Let's Encrypt
+
+The board already listens on HTTPS port 443 using a local certificate by default. To use a publicly trusted certificate, update the board and then run on the Debian server:
+
+```bash
+cd ~/RCPitBoard
+bash scripts/update.sh
+bash scripts/enable-letsencrypt.sh
+```
+
+The helper prompts for a hostname (such as pitboard.example.com), its GoDaddy DNS zone (example.com), an ACME email, and a production Classic GoDaddy API key and secret. It checks read access before configuring anything, builds Caddy with the pinned GoDaddy DNS module, validates the config, and restarts only the HTTPS proxy on port 443. Existing HTTP and app data remain available. DNS-01 validation creates and removes temporary TXT challenge records automatically; Caddy renews certificates automatically while the proxy runs. Certificate issuance needs working outbound HTTPS and DNS; DNS propagation may take several minutes.
+
+Use a real domain whose authoritative DNS is hosted at GoDaddy. The hostname must resolve to this server for your viewers, via public DNS or a LAN DNS override. DNS validation does not require forwarding internet port 80 to the server. Open the board by hostname, not by IP. If an existing service owns port 443, resolve that conflict before enabling this mode.
+
+Create production Classic key/secret credentials at https://classic-developer.godaddy.com/keys. This module uses the legacy sso-key interface, not a Personal Access Token. GoDaddy currently documents this interface for v1/v2 but schedules its deprecation; if your account no longer supports Classic DNS access, this integration cannot validate certificates. See https://developer.godaddy.com/en/docs/api-users/auth and https://github.com/caddy-dns/godaddy. Keep the credentials on the server; do not paste them into chat or the unauthenticated Admin page.
+
+Credentials are saved only in the ignored, mode-600 .env.godaddy file and injected into the HTTPS container, not the application container. They are excluded from Docker build contexts. The helper saves HTTPS_HOST, HTTPS_PORT=443 and COMPOSE_FILE=compose.yaml:compose.godaddy.yaml in .env so normal setup/update commands keep DNS-backed HTTPS enabled. Updates build every configured service, including the GoDaddy proxy. Certificates and ACME account keys stay in the existing persistent Caddy data volume. Do not use docker compose down -v during normal updates.
+
+Inspect issuance and renewal with `docker compose logs --tail=50 https` and check the certificate with `curl --fail https://YOUR-HOSTNAME/api/health`. A healthy proxy process alone does not guarantee that certificate issuance has finished. Real GoDaddy access and issuance must be verified on your server; CI builds the plugin and validates configuration with dummy credentials without contacting an ACME service.
+
+To return to local certificates, remove COMPOSE_FILE from .env, set HTTPS_HOST to the LAN IP or local hostname, and run `docker compose up -d --no-deps --wait https`. This changes only the proxy. Keep or revoke the now-unused GoDaddy credentials as appropriate.
