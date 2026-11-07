@@ -13,7 +13,6 @@ export default function EpdPanel({ epd, live, driverKey }) {
   const first = activePage * pageSize;
   const hasRows = rows.length > 0;
   const raceKey = `${epd?.className}|${epd?.heatNum}|${live?.roundCode}|${live?.raceIndex}`;
-  const paceByName = new Map((live?.rows || []).map(row => [normalizeName(row.name), row.pace]));
 
   useEffect(() => {
     const node = viewport.current;
@@ -37,14 +36,14 @@ export default function EpdPanel({ epd, live, driverKey }) {
   return (
     <section className="epd-panel dashboard-positions" aria-labelledby="epd-title">
       <h2 id="epd-title" className="board-title">Estimated positions</h2>
-      <p className="epd-description">{epd?.className || "Waiting for estimated positions"}{epd?.numHeats ? ` / Heat ${epd.heatNum}/${epd.numHeats}` : epd?.qualType ? ` / ${epd.qualType}` : ""}</p>
+      <p className="epd-description">{epd?.className || "Waiting for estimated positions"}{epd?.scoring === "seeding" ? ` / ${epd.roundLabel || "Seeding"}${/[a-z]/i.test(epd.qualType || "") ? ` / ${epd.qualType}` : ""}` : ""}{epd?.numHeats ? ` / Heat ${epd.heatNum}/${epd.numHeats}` : epd?.qualType ? ` / ${epd.qualType}` : ""}</p>
       {rows.length ? <>
-        <div className="epd-grid epd-column-headings"><span>Pos</span><span>Driver</span><span className="text-center">Change</span><span className="text-right">Projected</span></div>
+        <div className="epd-grid epd-column-headings"><span>Pos</span><span>Driver</span><span className="text-center">Change</span><span className="text-right">{epd.resultLabel || "Projected"}</span></div>
         <div ref={viewport} className="epd-page-viewport min-h-0 flex-1 overflow-hidden">
           {rows.slice(first, first + pageSize).map(row => {
             const mine = Boolean(driverKey) && normalizeName(row.name) === driverKey;
             const change = Number(row.change) || 0;
-            const projection = projectionParts(paceByName.get(normalizeName(row.name)) || row.result);
+            const projection = projectionParts(row.result);
             return <div key={`${row.pos}-${row.name}`} className={`epd-grid epd-row ${mine ? "is-mine" : ""}`}>
               <span className="font-mono tabular-nums">{row.pos}</span>
               <span className="epd-driver" title={row.name}>{prettyName(row.name)}</span>

@@ -12,6 +12,8 @@ import {
   medianCadenceMinutes,
   sameClass,
   roundForCode,
+  roundRank,
+  rankEstimatedPositions,
 } from "./liverc.js";
 
 const MAX_ROUNDS = 8;
@@ -20,15 +22,6 @@ const DEFAULT_SCROLL_SPEED = 16;
 function raceNumberFromLabel(label) {
   const m = String(label || "").match(/Race\s+(\d+)/i);
   return m ? parseInt(m[1], 10) : null;
-}
-
-function roundRank(label) {
-  const text = String(label || "").toLowerCase();
-  const num = parseInt((text.match(/(\d+)/) || [])[1] || "0", 10);
-  if (text.includes("practice")) return 10 + num;
-  if (text.includes("qualif")) return 100 + num;
-  if (text.includes("main") || text.includes("final") || text.includes("feature")) return 1000 + num;
-  return 500 + num;
 }
 
 function driverKey(name) {
@@ -191,7 +184,7 @@ export default async function (saved) {
     const liveRace = liveForRace(live, feedRace);
     const liveClass = liveRace?.className || "";
     const raceClass = currentRace ? currentRace.className : "";
-    const epdForClass = epd && (sameClass(epd, liveClass) || sameClass(epd, raceClass)) ? epd : null;
+    const epdForClass = epd && (sameClass(epd, liveClass) || sameClass(epd, raceClass)) ? rankEstimatedPositions(epd, activeRound?.label, live?.roundCode) : null;
 
     return Response.json({
       fetchedAt: new Date().toISOString(),

@@ -363,7 +363,7 @@ function epdBetter(candidate, current) {
   return candidate.inRace && !current.inRace;
 }
 
-function buildEpd(header, drivers) {
+export function buildEpd(header, drivers) {
   const fields = header ? String(header).split("|") : [];
   let parsed = null;
   try {
@@ -393,24 +393,6 @@ function buildEpd(header, drivers) {
   }
   if (!rows.length && !fields[0]) return null;
 
-  const best = new Map();
-  for (const row of rows) {
-    const current = best.get(row.driverId);
-    if (!current || epdBetter(row, current)) best.set(row.driverId, row);
-  }
-  const unique = [...best.values()].sort((a, b) => {
-    if (a.ranked !== b.ranked) return a.ranked ? -1 : 1;
-    if (a.dnf !== b.dnf) return a.dnf ? 1 : -1;
-    if (a.laps !== b.laps) return b.laps - a.laps;
-    if (a.seconds !== b.seconds) return a.seconds - b.seconds;
-    return a.pos - b.pos;
-  });
-  unique.forEach((row, index) => {
-    row.pos = index + 1;
-  });
-  rows.length = 0;
-  rows.push(...unique);
-
   return {
     className: fields[0] || "",
     heatNum: fields[1] || "",
@@ -418,6 +400,42 @@ function buildEpd(header, drivers) {
     qualType: fields[3] || "",
     rows,
   };
+}
+
+// Seeding is ranked by the timing system's configured lap metric, not race pace.
+export function rankEstimatedPositions(epd, roundLabel = '', roundCode = '') {
+  if (!epd) return null;
+  const seeding = /seed/i.test(roundLabel) || /^S\d/i.test(String(roundCode).trim()) || /seed|consecutive|average|fastest|best.*lap/i.test(epd.qualType || '');
+  const rows = (epd.rows || []).map(row => ({ ...row }));
+  const best = new Map();
+  for (const row of rows) {
+    const key = row.driverId || row.name.toLowerCase();
+    const current = best.get(key);
+    const better = seeding ? !current || row.pos < current.pos || (row.pos === current.pos && row.inRace && !current.inRace)
+      : !current || epdBetter(row, current);
+    if (better) best.set(key, row);
+  }
+  const unique = [...best.values()].sort((a,b) => {
+    if (seeding) return a.pos-b.pos;
+    if (a.ranked !== b.ranked) return a.ranked ? -1 : 1;
+    if (a.dnf !== b.dnf) return a.dnf ? 1 : -1;
+    if (a.laps !== b.laps) return b.laps-a.laps;
+    if (a.seconds !== b.seconds) return a.seconds-b.seconds;
+    return a.pos-b.pos;
+  });
+  if (!seeding) unique.forEach((row,index) => { row.pos = index+1; });
+  return { ...epd, rows: unique, scoring: seeding ? 'seeding' : 'laps-time', roundLabel,
+    resultLabel: seeding ? 'Seeding result' : 'Projected' };
+}
+
+export function roundRank(label) {
+  const text = String(label || '').toLowerCase();
+  const number = parseInt((text.match(/(\d+)/) || [])[1] || '0', 10);
+  if (text.includes('practice')) return 10+number;
+  if (text.includes('seed')) return 50+number;
+  if (text.includes('qualif')) return 100+number;
+  if (/main|final|feature/.test(text)) return 1000+number;
+  return 500+number;
 }
 
 // The EPD (estimated position data) panel on the live scoring page reads two
@@ -462,6 +480,10 @@ export function roundForCode(code, rounds) {
     const m = String(label).match(/(\d+)/);
     return m ? parseInt(m[1], 10) : null;
   };
+  if (normalized.startsWith("S")) {
+    const seeding = rounds.filter(r => /seed/i.test(r.label));
+    return seeding.find(r => labelNumber(r.label) === number) || null;
+  }
   if (normalized.startsWith("Q")) {
     const quals = rounds.filter((r) => /qualif/i.test(r.label));
     return quals.find((r) => labelNumber(r.label) === number) || quals[quals.length - 1] || null;
