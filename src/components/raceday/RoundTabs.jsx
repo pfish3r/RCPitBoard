@@ -1,4 +1,5 @@
 import React from "react";
+import { shortRoundLabel } from "@/lib/roundLabels";
 
 export default function RoundTabs({ rounds, activeRoundId, value, onChange }) {
   if (!rounds?.length) return null;
@@ -13,6 +14,9 @@ export default function RoundTabs({ rounds, activeRoundId, value, onChange }) {
           <button
             key={round.id}
             type="button"
+            title={round.label}
+            aria-label={`${round.label} / ${live ? "Live" : done ? "Done" : "Next"}`}
+            aria-pressed={selected}
             onClick={() => onChange(round.id)}
             className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition lg:text-sm ${
               selected
@@ -20,7 +24,7 @@ export default function RoundTabs({ rounds, activeRoundId, value, onChange }) {
                 : "border-rd-border bg-rd-surface2 text-rd-muted hover:border-rd-borderstrong hover:text-rd-bright"
             }`}
           >
-            <span className="whitespace-nowrap">{round.label}</span>
+            <span className="whitespace-nowrap">{shortRoundLabel(round.label)}</span>
             <span
               className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] ${
                 live
