@@ -8,6 +8,7 @@
 https://{$HTTPS_HOST}:8443 {
 	tls {
 		dns godaddy {env.GODADDY_API_TOKEN}
+		propagation_delay 2m
 		propagation_timeout 10m
 		resolvers 1.1.1.1 8.8.8.8
 	}
