@@ -15,7 +15,6 @@ import { DEFAULT_DISPLAY, displayGrid, panelTypography, nextDisplayPanel } from 
 import FeedStatus from "@/components/raceday/FeedStatus";
 import useTvMode from "@/hooks/useTvMode";
 import RaceDayHeader from "@/components/raceday/RaceDayHeader";
-import RoundTabs from "@/components/raceday/RoundTabs";
 import FullscreenRaceStrip from "@/components/raceday/FullscreenRaceStrip";
 import RaceOrder from "@/components/raceday/RaceOrder";
 import LiveResults from "@/components/raceday/LiveResults";
@@ -28,7 +27,6 @@ export default function RaceDay() {
   const { snapshot, error, loading, refreshing, refresh, now, health, wallNow } = useRaceDaySnapshot();
   const { tvMode, toggleTv, fullscreen, toggleFullscreen, fullscreenError } = useTvMode();
   const [driverKey, setDriverKey] = useState(() => localStorage.getItem(DRIVER_KEY) || "");
-  const [viewRoundId, setViewRoundId] = useState(null);
   const [showLive, setShowLive] = useState(() => localStorage.getItem(LIVE_PANEL_KEY) !== "off");
 
   const display = snapshot?.display || DEFAULT_DISPLAY;
@@ -39,8 +37,7 @@ export default function RaceDay() {
   const estimatesAvailable = health.estimatesAvailable || paused;
   const rounds = snapshot?.rounds || [];
   const activeRound = rounds.find((round) => round.id === snapshot?.activeRoundId) || rounds[0] || null;
-  const selectedRound = rounds.find((round) => round.id === viewRoundId) || activeRound;
-  const viewRound = tvMode ? activeRound : selectedRound;
+  const viewRound = activeRound;
   const isActiveRound = viewRound && activeRound ? viewRound.id === activeRound.id : false;
 
   const drivers = useMemo(() => collectDrivers(rounds), [rounds]);
@@ -106,8 +103,8 @@ export default function RaceDay() {
 
   const inViewRound = timeline.some((race) => race.mine);
   const emptyMessage = inViewRound
-    ? `Done in ${viewRound?.label || "this round"} - check the round tabs for your next one.`
-    : `No entry in ${viewRound?.label || "this round"} - check the round tabs above.`;
+    ? `Done in ${viewRound?.label || "this round"}.`
+    : `No entry in ${viewRound?.label || "this round"}.`;
 
   const pickDriver = (key) => {
     setDriverKey(key);
@@ -191,9 +188,6 @@ export default function RaceDay() {
           {rotating && <div className="rotation-toolbar"><span>{({live:"Live results",epd:"Estimated positions",order:"Race order"})[rotation.panel]} / Next: {({live:"Live results",epd:"Estimated positions",order:"Race order"})[nextDisplayPanel(rotation.panel)]} in {rotation.remaining}s</span><button type="button" onClick={rotation.advance}>Next screen</button></div>}
           <div style={displayLive ? { ...displayGrid(display, finalsLayout), ...(rotating ? { gridTemplateAreas: '\"' + rotation.panel + '\"' } : {}) } : undefined} className={`dashboard-layout ${displayLive ? `dashboard-with-live dashboard-configured ${rotating ? "dashboard-rotating" : ""} ${finalsLayout ? "dashboard-finals" : ""}` : "dashboard-order-only"}`}>
             {(!rotating || rotation.panel === "order") && <main style={panelTypography(display, "order")} className="dashboard-order board-panel">
-              {!tvMode && <div className="mb-2 shrink-0">
-                <RoundTabs rounds={rounds} activeRoundId={snapshot?.activeRoundId} value={viewRound?.id} onChange={setViewRoundId} />
-              </div>}
               <div className="min-h-0 flex-1">
                 <RaceOrder timeline={visibleTimeline} roundLabel={viewRound?.label} isActiveRound={isActiveRound}
                   timingEstimate={snapshot?.timingEstimate} tvMode={tvMode} rowHeight={display.raceRowHeight ?? 84} fontScale={display.fonts.order / 100} />
